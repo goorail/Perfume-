@@ -188,6 +188,7 @@ STRIPE_WEBHOOK_SECRET = os.environ.get('stripe_webhook_secret', default='')
 
 PAYMOB_API_KEY = os.environ.get('PAYMOB_API_KEY')
 PAYMOB_INTEGRATION_ID = os.environ.get('PAYMOB_INTEGRATION_ID')
+PAYMOB_WALLET_INTEGRATION_ID = os.environ.get('PAYMOB_WALLET_INTEGRATION_ID')
 PAYMOB_HMAC_SECRET = os.environ.get('PAYMOB_HMAC_SECRET')
 PAYMOB_IFRAME_ID = os.environ.get('PAYMOB_IFRAME_ID')
 

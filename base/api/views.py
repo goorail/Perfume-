@@ -797,6 +797,8 @@ import hashlib
 @permission_classes([IsAuthenticated])
 def paymob_checkout(request):
     order_id = request.data.get('order_id')
+    payment_method = request.data.get('payment_method', 'card')
+    wallet_number = request.data.get('wallet_number')
     
     if not order_id:
         return Response({"error": "order_id is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -866,6 +868,10 @@ def paymob_checkout(request):
         "state": "NA"
     }
     
+    integration_id = getattr(settings, 'PAYMOB_WALLET_INTEGRATION_ID', None) if payment_method == 'wallet' else settings.PAYMOB_INTEGRATION_ID
+    if payment_method == 'wallet' and not integration_id:
+        return Response({"error": "Wallet integration is not configured"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
     payment_key_data = {
         "auth_token": token,
         "amount_cents": str(amount_cents), 
@@ -873,7 +879,7 @@ def paymob_checkout(request):
         "order_id": paymob_order_id,
         "billing_data": billing_data,
         "currency": "EGP", 
-        "integration_id": settings.PAYMOB_INTEGRATION_ID
+        "integration_id": integration_id
     }
     
     payment_key_response = requests.post(
@@ -885,14 +891,37 @@ def paymob_checkout(request):
         
     payment_token = payment_key_response.json().get('token')
     
-    # Construct the final Paymob iframe checkout URL
-    checkout_url = f"https://accept.paymob.com/api/acceptance/iframes/{settings.PAYMOB_IFRAME_ID}?payment_token={payment_token}"
-    
-    return Response({
-        "url": checkout_url,
-        "payment_token": payment_token,
-        "iframe_id": settings.PAYMOB_IFRAME_ID
-    })
+    # 4. Handle Final URL based on Payment Method
+    if payment_method == 'wallet':
+        if not wallet_number:
+            return Response({"error": "Wallet number is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # For wallets, explicitly request the Pay URL
+        pay_request = requests.post(
+            "https://accept.paymob.com/api/acceptance/payments/pay",
+            json={
+                "source": {
+                    "identifier": wallet_number,
+                    "subtype": "WALLET"
+                },
+                "payment_token": payment_token
+            }
+        )
+        if not pay_request.ok:
+            return Response({"error": "Failed to initialize wallet payment"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        redirect_url = pay_request.json().get('redirect_url')
+        return Response({"url": redirect_url})
+        
+    else:
+        # Construct the final Paymob iframe checkout URL
+        checkout_url = f"https://accept.paymob.com/api/acceptance/iframes/{settings.PAYMOB_IFRAME_ID}?payment_token={payment_token}"
+        
+        return Response({
+            "url": checkout_url,
+            "payment_token": payment_token,
+            "iframe_id": settings.PAYMOB_IFRAME_ID
+        })
 
 @api_view(['POST']) 
 @permission_classes([AllowAny])
