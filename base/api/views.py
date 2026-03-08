@@ -357,7 +357,7 @@ def place_order(request):
         # Check if active
         if not variant.is_active or not variant.product.is_active:
             return Response(
-                {"error": f"Sorry, {variant.product.name} ({variant.color_name}) is no longer available."}, 
+                {"error": f"Sorry, {variant.product.name} ({variant.volume}) is no longer available."}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -1381,14 +1381,14 @@ def get_low_chart_info(request):
     )
 
     # 2. Serialize manually for the chart
-    # We combine Product Name + Color + Size so the admin knows exactly which item it is.
+    # We combine Product Name + Volume so the admin knows exactly which item it is.
     data = []
     for v in low_variants:
-        full_name = f"{v.product.name} ({v.color_name}/{v.size})"
+        full_name = f"{v.product.name} ({v.volume})"
         
         data.append({
             "id": v.id,
-            "name": full_name, # "T-Shirt (Red/S)"
+            "name": full_name, # "Dior Sauvage (100ml)"
             "stock": v.stock
         })
         
@@ -1402,15 +1402,15 @@ def get_low_chart_info(request):
 @permission_classes([IsAdminUser])
 def get_top_sales_chart_info(request):
     """
-    Returns top selling styles (Product + Color), ignoring size.
+    Returns top selling variants (Product + Volume).
     """
     top_styles = (
         models.ProductVariant.objects
         .filter(orderitem__order__status='paid') # Only paid orders
         
-        # 1. GROUP BY Product Name and Color Name
-        # This merges "Red S", "Red M", "Red L" into one "Red" entry
-        .values('product__name', 'color_name') 
+        # 1. GROUP BY Product Name and Volume
+        # This groups "Dior Sauvage 100ml" together
+        .values('product__name', 'volume') 
         
         # 2. Sum the quantity for that group
         .annotate(total_sold=Sum('orderitem__quantity'))
