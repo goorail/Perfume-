@@ -1265,6 +1265,7 @@ def upload_variant_image_api(request, variant_id):
     """
     Uploads a single image for a specific variant.
     Key in FormData should be 'img'.
+    Optional Key 'is_thumbnail' (boolean string).
     """
     # 1. Get the variant
     variant = get_object_or_404(models.ProductVariant, id=variant_id)
@@ -1273,23 +1274,50 @@ def upload_variant_image_api(request, variant_id):
     if 'img' not in request.FILES:
         return Response({"error": "No image file provided (key 'img' missing)."}, status=400)
 
+    is_thumbnail = request.data.get('is_thumbnail', 'false').lower() in ['true', '1', 'yes']
+
     # 3. Manual creation is often easier for simple file uploads than serializers
     try:
         image_file = request.FILES['img']
         
         # Create the image instance
-        img_instance = models.ProductImage.objects.create(
+        img_instance = models.ProductImage(
             variant=variant,
-            img=image_file
+            img=image_file,
+            is_thumbnail=is_thumbnail
         )
+        img_instance.save() # This triggers the custom save method to handle existing thumbnails
         
         return Response({
             "message": "Image uploaded",
-            "url": img_instance.img.url
+            "url": img_instance.img.url,
+            "id": img_instance.id,
+            "is_thumbnail": img_instance.is_thumbnail
         }, status=status.HTTP_201_CREATED)
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['DELETE'])
+@permission_classes([IsAdminUser])
+def delete_variant_image_api(request, image_id):
+    """
+    Deletes a specific product image by ID.
+    """
+    image = get_object_or_404(models.ProductImage, id=image_id)
+    image.delete()
+    return Response({"message": "Image deleted successfully."}, status=status.HTTP_200_OK)
+
+@api_view(['PATCH'])
+@permission_classes([IsAdminUser])
+def set_variant_thumbnail_api(request, image_id):
+    """
+    Sets a specific image as the thumbnail.
+    """
+    image = get_object_or_404(models.ProductImage, id=image_id)
+    image.is_thumbnail = True
+    image.save() # Custom save logic automatically unchecks other images for this variant
+    return Response({"message": "Thumbnail set successfully."}, status=status.HTTP_200_OK)
 
 #### i will adjust after some shits
 

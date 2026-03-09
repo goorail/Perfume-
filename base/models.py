@@ -131,6 +131,15 @@ class ProductVariant(models.Model):
 class ProductImage(models.Model):
     variant = models.ForeignKey(ProductVariant, related_name='images', on_delete=models.CASCADE)
     img = CloudinaryField("products/",null=True)
+    is_thumbnail = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-is_thumbnail', 'id']
+        
+    def save(self, *args, **kwargs):
+        if self.is_thumbnail:
+            ProductImage.objects.filter(variant=self.variant).exclude(pk=self.pk).update(is_thumbnail=False)
+        super().save(*args, **kwargs)
     
 ###################
 

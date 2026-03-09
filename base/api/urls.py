@@ -62,6 +62,8 @@ urlpatterns = [
     path('dashboard/products/<int:product_id>/variants/add/', views.add_variants_to_product_api, name='dash-add-variants'),
     # 3. Upload Image (Dynamic URL needs variant_id)
     path('dashboard/variants/<int:variant_id>/upload-image/', views.upload_variant_image_api, name='dash-upload-image'),
+    path('dashboard/images/<int:image_id>/delete/', views.delete_variant_image_api, name='dash-delete-image'),
+    path('dashboard/images/<int:image_id>/set-thumbnail/', views.set_variant_thumbnail_api, name='dash-set-thumbnail'),
     # 4. Update Variant
     # Edit / Deactivate Product
     path('dashboard/products/<int:pk>/manage/', views.dashboard_product_detail_api, name='dash-manage-product'),
