@@ -68,7 +68,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         model = models.Product
         fields = [
             'id', 'name', 'description', 'category', 'fragrance_family', 'concentration', 
-            'variants', 'rating', 'created_at'
+            'variants', 'rating', 'created_at','is_active'
         ]
 
 
