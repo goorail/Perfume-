@@ -75,4 +75,13 @@ urlpatterns = [
     path('charts/products/low/',views.get_low_chart_info),
     path('charts/products/top-selling/',views.get_top_sales_chart_info),
     path('charts/sales-orders/',views.get_sales_orders_chart),
+    
+    # # Banners
+    path('banners/', views.get_active_banners, name='active-banners'),
+    path('dashboard/banners/', views.manage_banners, name='manage-banners'),
+    path('dashboard/banners/<int:pk>/', views.manage_banner_detail, name='manage-banner-detail'),
+
+    # # Site Settings
+    path('settings/', views.get_site_settings, name='get-site-settings'),
+    path('dashboard/settings/', views.manage_site_settings, name='manage-site-settings'),
 ]

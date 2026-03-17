@@ -1604,3 +1604,77 @@ def google_login(request):
 
     except ValueError:
         return Response({"error": "Invalid Google token"}, status=status.HTTP_400_BAD_REQUEST)
+
+# --- BANNERS API ---
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_active_banners(request):
+    """Public endpoint to get active banners for the storefront carousel."""
+    banners = models.Banner.objects.filter(is_active=True)
+    serializer = serializers.BannerSerializer(banners, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAdminUser])
+def manage_banners(request):
+    """Admin dashboard endpoint to list all banners or create a new one."""
+    if request.method == 'GET':
+        banners = models.Banner.objects.all()
+        serializer = serializers.BannerSerializer(banners, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    elif request.method == 'POST':
+        # Handles text fields. For image uploads, parser_classes might be needed or handled via separate endpoint like variants.
+        serializer = serializers.BannerSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'PATCH', 'DELETE'])
+@permission_classes([IsAdminUser])
+def manage_banner_detail(request, pk):
+    """Admin dashboard endpoint to update, delete, or fetch a particular banner."""
+    banner = get_object_or_404(models.Banner, id=pk)
+
+    if request.method == 'GET':
+        serializer = serializers.BannerSerializer(banner)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+    elif request.method == 'PATCH':
+        serializer = serializers.BannerSerializer(banner, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+    elif request.method == 'DELETE':
+        banner.delete()
+        return Response({'message': 'Banner deleted successfully.'}, status=status.HTTP_200_OK)
+
+# --- SITE SETTINGS API ---
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_site_settings(request):
+    """Public endpoint to fetch all global site configurations like the top announcement bar."""
+    settings_obj = models.SiteSettings.load()
+    serializer = serializers.SiteSettingsSerializer(settings_obj)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAdminUser])
+def manage_site_settings(request):
+    """Admin endpoint to view or update site settings."""
+    settings_obj = models.SiteSettings.load()
+
+    if request.method == 'GET':
+        serializer = serializers.SiteSettingsSerializer(settings_obj)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+    elif request.method == 'PATCH':
+        serializer = serializers.SiteSettingsSerializer(settings_obj, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+

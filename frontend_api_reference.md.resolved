@@ -232,3 +232,79 @@ Uploads an image for the variant.
 > **IMPORTANT: Do NOT send this as JSON.**
 > You must send this request as `multipart/form-data`.
 > Send one field: `img` (File Blob)
+
+---
+
+## 7. Banner Management (`/api/banners/` & `/api/dashboard/banners/`)
+
+### `GET /api/banners/` (Public)
+Fetches all currently active banners for the storefront hero carousel, ordered by the `order` field.
+**Response Format:**
+```json
+[
+  {
+    "id": 1,
+    "title": "Summer Sale",
+    "image": "image/upload/v1/banners/xyzz...",
+    "img_url": "https://res.cloudinary.com/.../banners/xyzz...",
+    "link": "https://example.com/summer-sale",
+    "is_active": true,
+    "order": 1,
+    "created_at": "2023-11-01T10:00:00Z"
+  }
+]
+```
+
+### `GET /api/dashboard/banners/` (Admin)
+Fetches all banners, including inactive ones, for the admin dashboard.
+
+### `POST /api/dashboard/banners/` (Admin)
+Creates a new banner. Note that you must send this request as `multipart/form-data` to handle the `image` file upload.
+```json
+{
+  "title": "New Arrival Promotion",
+  "link": "https://example.com/new-arrivals",
+  "order": 2,
+  "is_active": true
+}
+```
+*Plus an `image` File Blob in the FormData object.*
+
+### `PATCH /api/dashboard/banners/<banner_id>/` (Admin)
+Updates a specific banner. Common use cases are toggling the `is_active` status or changing the `order` using typical JSON payloads.
+```json
+{
+  "is_active": false,
+  "order": 5
+}
+```
+
+### `DELETE /api/dashboard/banners/<banner_id>/` (Admin)
+Permanently deletes the banner and its associated image from the database.
+
+---
+
+## 8. Site Settings (`/api/settings/` & `/api/dashboard/settings/`)
+
+### `GET /api/settings/` (Public)
+Fetches the global site configurations, such as the top announcement bar text. Call this once when the application boots up to display the top bar.
+**Response Format:**
+```json
+{
+  "announcement_text": "Free shipping for orders over $2000",
+  "announcement_link": "https://example.com/shipping-policy",
+  "is_announcement_active": true
+}
+```
+
+### `GET /api/dashboard/settings/` (Admin)
+Fetches the global site configurations for the admin dashboard. The response format is exactly the same as the public endpoint.
+
+### `PATCH /api/dashboard/settings/` (Admin)
+Updates the global site configurations. Because there is only ever *one* settings object, you don't need to pass an ID in the URL.
+```json
+{
+  "announcement_text": "Happy Eid - 20% Off Everything!",
+  "is_announcement_active": true
+}
+```

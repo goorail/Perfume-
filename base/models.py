@@ -45,6 +45,49 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+class Banner(models.Model):
+    title = models.CharField(max_length=200)
+    image = CloudinaryField("banners/", null=True)
+    link = models.URLField(max_length=500, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    order = models.IntegerField(default=0, help_text="Order in which banner appears (lower numbers first)")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', '-created_at']
+
+    def __str__(self):
+        return self.title
+
+class SiteSettings(models.Model):
+    # This ensures there's only ever one row in the table
+    # We will enforce this in the save method
+    
+    # --- Top Announcement Bar ---
+    announcement_text = models.CharField(max_length=255, blank=True, null=True, help_text="e.g. Free shipping for orders over $2000")
+    announcement_link = models.URLField(max_length=500, blank=True, null=True, help_text="Optional link when clicking the top bar")
+    is_announcement_active = models.BooleanField(default=True)
+    
+    # --- Optional future additions ---
+    # store_contact_email = models.EmailField(blank=True, null=True)
+    # facebook_link = models.URLField(blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = "Site Settings"
+
+    def save(self, *args, **kwargs):
+        # Prevent creating a second row. Always update ID=1.
+        self.pk = 1
+        super(SiteSettings, self).save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        # Automatically creates the first row if it doesn't exist yet
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def __str__(self):
+        return "Global Site Settings"
 
 
 ###################

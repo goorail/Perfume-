@@ -304,3 +304,17 @@ class DashboardVariantUpdateSerializer(serializers.ModelSerializer):
                 
         return attrs
 
+class BannerSerializer(serializers.ModelSerializer):
+    img_url = serializers.SerializerMethodField()
+    def get_img_url(self, obj):
+        if obj.image:
+            return obj.image.url
+        return None
+    class Meta:
+        model = models.Banner
+        fields = ['id', 'title', 'image','img_url', 'link', 'is_active', 'order', 'created_at']
+
+class SiteSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SiteSettings
+        fields = ['announcement_text', 'announcement_link', 'is_announcement_active']
