@@ -10,7 +10,7 @@ from datetime import timedelta
 import datetime
 from django.utils import timezone
 from django.db.models.functions import TruncMonth
-from django.db.models import Count,F,Avg,Sum,Prefetch,Q,Min,Max, DecimalField, Value
+from django.db.models import Count,F,Avg,Sum,Prefetch,Q,Min,Max, DecimalField, Value, OuterRef, Subquery
 from rest_framework import status
 from .permissions import UnAuthenticated
 from django.db.models.functions import Coalesce
@@ -142,8 +142,18 @@ def get_all_products(request):
     except ValueError:
         return Response({"error": "Invalid price format. Must be a number."}, status=status.HTTP_400_BAD_REQUEST)
 
+    sales_subquery = models.OrderItem.objects.filter(
+        variant__product_id=OuterRef('pk')
+    ).values('variant__product_id').annotate(
+        total=Sum('quantity')
+    ).values('total')
+
+    queryset = queryset.annotate(
+        sales_count=Coalesce(Subquery(sales_subquery), Value(0))
+    )
+
     # 3. Apply Pagination
-    queryset = queryset.order_by('-created_at')
+    queryset = queryset.order_by('-sales_count', '-created_at')
     paginator = ProductPagination()
     result_page = paginator.paginate_queryset(queryset, request)
     
@@ -1683,4 +1693,4 @@ def manage_site_settings(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+
