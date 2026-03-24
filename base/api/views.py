@@ -1122,6 +1122,18 @@ def get_latest_orders(request):
     )
     .order_by('-created_at')
 )
+
+    search_query = request.query_params.get('search', None)
+    if search_query:
+        orders = orders.filter(
+            Q(customer__email__icontains=search_query) |
+            Q(phone_number__icontains=search_query) |
+            Q(full_name__icontains=search_query)
+        )
+
+    status_query = request.query_params.get('status', None)
+    if status_query:
+        orders = orders.filter(status__iexact=status_query)
     paginator = PageNumberPagination()
     paginator.page_size = 10  # Set how many orders you want per page
     
