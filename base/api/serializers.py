@@ -93,7 +93,7 @@ class CartSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Category
-        fields = ['id', 'name'] 
+        fields = ['id', 'name', 'name_en', 'name_ar'] 
         # Add 'description' or 'slug' here if your model has them
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -260,7 +260,7 @@ class DashboardProductCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Product
-        fields = ['id', 'name', 'category', 'description', 'fragrance_family', 'concentration', 'variants']
+        fields = ['id', 'name_en', 'name_ar', 'category', 'description_en', 'description_ar', 'fragrance_family_en', 'fragrance_family_ar', 'concentration_en', 'concentration_ar', 'variants']
 
     def create(self, validated_data):
         variants_data = validated_data.pop('variants', [])
@@ -285,7 +285,7 @@ class DashboardProductUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Product
-        fields = ['name', 'category', 'description', 'fragrance_family', 'concentration', 'is_active']
+        fields = ['name_en', 'name_ar', 'category', 'description_en', 'description_ar', 'fragrance_family_en', 'fragrance_family_ar', 'concentration_en', 'concentration_ar', 'is_active']
 
 class DashboardVariantUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -314,7 +314,22 @@ class BannerSerializer(serializers.ModelSerializer):
         model = models.Banner
         fields = ['id', 'title', 'image','img_url', 'link', 'is_active', 'order', 'created_at']
 
+class DashboardBannerSerializer(serializers.ModelSerializer):
+    img_url = serializers.SerializerMethodField()
+    def get_img_url(self, obj):
+        if obj.image:
+            return obj.image.url
+        return None
+    class Meta:
+        model = models.Banner
+        fields = ['id', 'title_en', 'title_ar', 'image','img_url', 'link', 'is_active', 'order', 'created_at']
+
 class SiteSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.SiteSettings
         fields = ['announcement_text', 'announcement_link', 'is_announcement_active']
+
+class DashboardSiteSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SiteSettings
+        fields = ['announcement_text_en', 'announcement_text_ar', 'announcement_link', 'is_announcement_active']
