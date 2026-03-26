@@ -94,7 +94,16 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Category
         fields = ['id', 'name', 'name_en', 'name_ar'] 
-        # Add 'description' or 'slug' here if your model has them
+
+    def create(self, validated_data):
+        if not validated_data.get('name_ar'):
+            validated_data['name_ar'] = validated_data.get('name_en', '')
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if not validated_data.get('name_ar') and validated_data.get('name_en'):
+            validated_data['name_ar'] = validated_data['name_en']
+        return super().update(instance, validated_data)
 
 class OrderItemSerializer(serializers.ModelSerializer):
     variant_name = serializers.CharField(source='variant.product.name', read_only=True)
@@ -153,7 +162,7 @@ class DashBoardOrderStatusSerializer(serializers.ModelSerializer):
 
     def validate_status(self, value):
         # 1. Check valid choices
-        valid_statuses = ["cancelled", "delivered", "shipped", "paid", "pending"]
+        valid_statuses = ["cancelled", "delivered", "shipped", "paid", "pending", "awaiting_payment"]
         if value not in valid_statuses:
             raise serializers.ValidationError("Invalid status choice.")
         
@@ -181,12 +190,20 @@ class DashBoardTopSalesSerializer(serializers.ModelSerializer):
     
 class DashBoardOrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
+    payment_method = serializers.SerializerMethodField()
     
     class Meta:
         model = models.Order
         fields = ['id', 'status', 'total_price', 'created_at', 'items', 
-                  'full_name', 'full_address', 'phone_number', 'country']
+                  'full_name', 'full_address', 'phone_number', 'country', 'payment_method']
         read_only_fields = ['id', 'status', 'total_price', 'created_at', 'items']
+
+    def get_payment_method(self, obj):
+        # Payment is a OneToOneField with related_name='payment'
+        payment = getattr(obj, 'payment', None)
+        if payment:
+            return payment.method
+        return None
 
 class DashBoardReviewSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(source='customer.full_name', read_only=True)
@@ -265,6 +282,11 @@ class DashboardProductCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         variants_data = validated_data.pop('variants', [])
         
+        # Auto-fill Arabic fields with English values if not provided
+        for field in ['name', 'description', 'fragrance_family', 'concentration']:
+            if not validated_data.get(f'{field}_ar'):
+                validated_data[f'{field}_ar'] = validated_data.get(f'{field}_en', '')
+
         # 1. Create the Product
         product = models.Product.objects.create(**validated_data)
         
@@ -286,6 +308,12 @@ class DashboardProductUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Product
         fields = ['name_en', 'name_ar', 'category', 'description_en', 'description_ar', 'fragrance_family_en', 'fragrance_family_ar', 'concentration_en', 'concentration_ar', 'is_active']
+
+    def update(self, instance, validated_data):
+        for field in ['name', 'description', 'fragrance_family', 'concentration']:
+            if validated_data.get(f'{field}_en') and not validated_data.get(f'{field}_ar'):
+                validated_data[f'{field}_ar'] = validated_data[f'{field}_en']
+        return super().update(instance, validated_data)
 
 class DashboardVariantUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -324,6 +352,16 @@ class DashboardBannerSerializer(serializers.ModelSerializer):
         model = models.Banner
         fields = ['id', 'title_en', 'title_ar', 'image','img_url', 'link', 'is_active', 'order', 'created_at']
 
+    def create(self, validated_data):
+        if not validated_data.get('title_ar'):
+            validated_data['title_ar'] = validated_data.get('title_en', '')
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if validated_data.get('title_en') and not validated_data.get('title_ar'):
+            validated_data['title_ar'] = validated_data['title_en']
+        return super().update(instance, validated_data)
+
 class SiteSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.SiteSettings
@@ -333,3 +371,8 @@ class DashboardSiteSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.SiteSettings
         fields = ['announcement_text_en', 'announcement_text_ar', 'announcement_link', 'is_announcement_active']
+
+    def update(self, instance, validated_data):
+        if validated_data.get('announcement_text_en') and not validated_data.get('announcement_text_ar'):
+            validated_data['announcement_text_ar'] = validated_data['announcement_text_en']
+        return super().update(instance, validated_data)

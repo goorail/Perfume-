@@ -403,8 +403,10 @@ def place_order(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    # --- 2. SAFE TO CREATE ---
-    # Since we passed the checks, we know it's safe to create the Order
+    # --- 2. Read Payment Method ---
+    payment_method = request.data.get('payment_method', 'card')
+
+    # --- 3. SAFE TO CREATE ---
     order = models.Order.objects.create(
         customer=request.user,
         full_name=serializer.validated_data['full_name'],
@@ -412,10 +414,10 @@ def place_order(request):
         phone_number=serializer.validated_data.get('phone_number'),
         country=serializer.validated_data.get('country'),
         order_notes=serializer.validated_data.get('order_notes'),
-        status='pending'
+        status='pending'  # Temporary, will be updated below
     )
 
-    # --- 3. CREATE ORDER ITEMS ---
+    # --- 4. CREATE ORDER ITEMS ---
     for item in cart.items.all():
         models.OrderItem.objects.create(
             order=order,
@@ -424,7 +426,42 @@ def place_order(request):
             price=item.price
         )
 
-    return Response({"message": _("Order placed successfully"), "order_id": order.id}, status=201)
+    # --- 5. COD vs ONLINE PAYMENT ---
+    if payment_method == 'cod':
+        # COD: Deduct stock, clear cart, create Payment, keep status "pending"
+        for item in order.items.select_related('variant'):
+            item.variant.stock = F('stock') - item.quantity
+            item.variant.save()
+
+        cart.items.all().delete()
+
+        models.Payment.objects.create(
+            customer=request.user,
+            order=order,
+            amount=order.total_price,
+            method='cod',
+            transaction_id=f"COD-{order.id}"
+        )
+
+        order.status = 'pending'
+        order.save()
+
+        return Response({
+            "message": _("Order placed successfully"),
+            "order_id": order.id,
+            "next_step": "success_page"
+        }, status=201)
+
+    else:
+        # ONLINE PAYMENT: Don't touch stock or cart yet — wait for payment gateway callback
+        order.status = 'awaiting_payment'
+        order.save()
+
+        return Response({
+            "message": _("Order initiated"),
+            "order_id": order.id,
+            "next_step": "payment_gateway"
+        }, status=201)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -562,6 +599,12 @@ def create_paypal_order(request):
         order = models.Order.objects.get(id=django_order_id, customer=request.user)
     except models.Order.DoesNotExist:
         return JsonResponse({'error': _('Order not found')}, status=404)
+
+    if order.status != 'awaiting_payment':
+        return JsonResponse(
+            {'error': _('This order cannot be paid online or is already processed.')}, 
+            status=400
+        )
 
     headers = {
         'Content-Type': 'application/json',
@@ -710,9 +753,12 @@ def create_checkout_session(request):
     except models.Order.DoesNotExist:
         return Response({"error": _("Order not found")}, status=status.HTTP_404_NOT_FOUND)
     
-    # Check if already paid
-    if order.status == 'paid':
-         return Response({"error": _("Order is already paid")}, status=status.HTTP_400_BAD_REQUEST)
+    # Check if eligible for online payment
+    if order.status != 'awaiting_payment':
+         return Response(
+             {"error": _("This order cannot be paid online or is already processed.")}, 
+             status=status.HTTP_400_BAD_REQUEST
+         )
 
     # Build line items
     line_items = []
@@ -845,8 +891,11 @@ def paymob_checkout(request):
     except models.Order.DoesNotExist:
         return Response({"error": _("Order not found")}, status=status.HTTP_404_NOT_FOUND)
         
-    if order.status == 'paid':
-        return Response({"error": _("Order is already paid")}, status=status.HTTP_400_BAD_REQUEST)
+    if order.status != 'awaiting_payment':
+        return Response(
+            {"error": _("This order cannot be paid online or is already processed.")}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     # 1. Authentication Request
     auth_response = requests.post(

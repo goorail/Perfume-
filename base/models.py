@@ -230,6 +230,7 @@ class Order(DirtyFieldsMixin,models.Model):
     
     STATUS_CHOICES = [
     ("pending", "Pending"),
+    ("awaiting_payment", "Awaiting Online Payment"),
     ("paid", "Paid"),
     ("shipped", "Shipped"),
     ("delivered", "Delivered"),
@@ -277,6 +278,7 @@ class Payment(models.Model):
         ("credit_card","Credit Card"),
         ("debit_card","Debit Card"),
         ("cash","Cash"),
+        ("cod","Cash on Delivery"),
         ("paypal","PayPal"),
         ("bank_transfer","Bank Transfer"),
         ("stripe","Stripe"),
