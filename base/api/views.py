@@ -105,7 +105,7 @@ def get_all_products(request):
             lowest_price=Min('variants__price'),
             average_rating=Avg('reviews__rating'),
             review_count=Count('reviews', distinct=True)
-        ).select_related('category').prefetch_related(
+        ).prefetch_related('categories',
             Prefetch('variants', queryset=models.ProductVariant.objects.prefetch_related('images'))
         )
     else:
@@ -114,7 +114,7 @@ def get_all_products(request):
             lowest_price=Min('variants__price'),
             average_rating=Avg('reviews__rating'),
             review_count=Count('reviews', distinct=True)
-        ).select_related('category').prefetch_related(
+        ).prefetch_related('categories',
             Prefetch('variants', queryset=models.ProductVariant.objects.filter(is_active=True).prefetch_related('images'))
         )
 
@@ -128,7 +128,7 @@ def get_all_products(request):
 
     category = request.query_params.get('category', None)
     if category:
-        queryset = queryset.filter(category__name__iexact=category)
+        queryset = queryset.filter(categories__name__iexact=category).distinct()
 
     min_price = request.query_params.get('min_price', None)
     max_price = request.query_params.get('max_price', None)
@@ -172,12 +172,14 @@ def get_product_detail(request, pk):
         if show_inactive:
             # ADMIN VIEW: Fetch the product and ALL of its variants, even if deactivated
             product = models.Product.objects.prefetch_related(
+                'categories',
                 Prefetch('variants', queryset=models.ProductVariant.objects.prefetch_related('images'))
             ).get(pk=pk) # <-- Removed is_active=True here
             
         else:
             # CUSTOMER VIEW: Strictly filter for active product and active variants
             product = models.Product.objects.prefetch_related(
+                'categories',
                 Prefetch('variants', queryset=models.ProductVariant.objects.filter(is_active=True).prefetch_related('images'))
             ).get(pk=pk, is_active=True)
 

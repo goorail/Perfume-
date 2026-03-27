@@ -265,3 +265,23 @@ msgstr "انجليزي"
 #: .\store\settings.py:170
 msgid "Arabic"
 msgstr "عربي"
+
+#: .\base\api\serializers.py
+msgid "Duplicate volumes are not allowed in the same request."
+msgstr "لا يُسمح بتكرار الأحجام في نفس الطلب."
+
+#: .\base\api\serializers.py
+msgid "A variant with this volume already exists for this product."
+msgstr "يوجد بالفعل متغير بهذا الحجم لهذا المنتج."
+
+#: .\base\api\serializers.py
+msgid "Invalid status choice."
+msgstr "اختيار حالة غير صالح."
+
+#: .\base\api\serializers.py
+msgid "You cannot manually mark an order as Paid."
+msgstr "لا يمكنك تحديد الطلب كمدفوع يدوياً."
+
+#: .\base\api\serializers.py
+msgid "Cannot change status of a paid order."
+msgstr "لا يمكن تغيير حالة طلب مدفوع."

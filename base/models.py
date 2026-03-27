@@ -36,7 +36,7 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ['full_name']
 
     def __str__(self):
-        return self.full_name
+        return self.full_name or self.email
     
 
 class Category(models.Model):
@@ -94,7 +94,7 @@ class SiteSettings(models.Model):
 class Product(models.Model):
     # Core Identity
     name = models.CharField(max_length=255)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
+    categories = models.ManyToManyField(Category, blank=True, related_name='products')
     description = models.TextField()
     
     # Perfume Specifics
@@ -207,7 +207,7 @@ class WishList(models.Model):
     products = models.ManyToManyField(Product,related_name='wishlists',blank=True)
 
     def __str__(self):
-        return self.customer.full_name
+        return self.customer.full_name or self.customer.email
 
 
 
@@ -291,7 +291,7 @@ class Payment(models.Model):
     transaction_id = models.CharField(max_length=100, null=True, unique=True)
 
     def __str__(self):
-        return self.customer.full_name if self.customer else "Guest Cart" 
+        return (self.customer.full_name or self.customer.email) if self.customer else "Guest Payment"
 
 
 
@@ -316,7 +316,9 @@ class Cart(models.Model):
         return sum(item.subtotal for item in self.items.all())
 
     def __str__(self):
-        return self.customer.full_name if self.customer else "Guest Cart"
+        if self.customer:
+            return self.customer.full_name or self.customer.email
+        return "Guest Cart"
 
 
 
