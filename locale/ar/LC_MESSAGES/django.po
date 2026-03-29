@@ -50,6 +50,10 @@ msgstr "التوكن غير صحيح"
 msgid "Invalid price format. Must be a number."
 msgstr "صيغة السعر غير صحيحة. يجب أن يكون رقمًا."
 
+#: .\base\api\views.py:255
+msgid "No enough stock for this item."
+msgstr "لا يوجد مخزون كافي لهذا العنصر"
+
 #: .\base\api\views.py:188
 msgid "Product not found"
 msgstr "المنتج غير موجود"

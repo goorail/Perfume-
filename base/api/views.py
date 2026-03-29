@@ -1,6 +1,7 @@
 from django.utils.translation import gettext as _
 from rest_framework.decorators import api_view,permission_classes, parser_classes
 import json
+from base.utils import send_telegram_notification
 from django.http import HttpResponse
 import stripe
 from rest_framework.response import Response
@@ -250,7 +251,7 @@ def add_to_cart(request):
         left = variant.stock - current_in_cart
         left = max(left, 0)
         return Response(
-            {"error": _(f"Not enough stock. You have {current_in_cart}, can only add {left} more.")},
+            {"error": _("No enough stock for this item.")},
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -447,6 +448,17 @@ def place_order(request):
 
         order.status = 'pending'
         order.save()
+        message = (
+            f"🚨 <b>NEW ORDER RECEIVED!</b> 🚨\n\n"
+            f"🛒 <b>Order ID(رقم الطلب):</b> #{order.id}\n"
+            f"👤 <b>Customer(العميل):</b> {order.full_name}\n"
+            f"👤 <b>Customer Number(رقم العميل):</b> {order.phone_number}\n"
+            f"👤 <b>Customer Address(عنوان العميل):</b> {order.full_address}\n"
+            f"👤 <b>Order Notes(ملاحظات الطلب):</b> {order.order_notes}\n"
+            f"💵 <b>Total(المبلغ):</b> {order.total_price} EGP\n"
+            f"💳 <b>Payment(طريقة الدفع):</b> {order.payment.method}\n\n"
+        )
+        send_telegram_notification(message)
 
         return Response({
             "message": _("Order placed successfully"),
@@ -1094,6 +1106,17 @@ def paymob_webhook(request):
                             method='paymob',
                             transaction_id=str(obj.get('id'))
                         )
+                        message = (
+                            f"🚨 <b>NEW ORDER RECEIVED!</b> 🚨\n\n"
+                            f"🛒 <b>Order ID(رقم الطلب):</b> #{order.id}\n"
+                            f"👤 <b>Customer(العميل):</b> {order.full_name}\n"
+                            f"👤 <b>Customer Number(رقم العميل):</b> {order.phone_number}\n"
+                            f"👤 <b>Customer Address(عنوان العميل):</b> {order.full_address}\n"
+                            f"👤 <b>Order Notes(ملاحظات الطلب):</b> {order.order_notes}\n"
+                            f"💵 <b>Total(المبلغ):</b> {order.total_price} EGP\n"
+                            f"💳 <b>Payment(طريقة الدفع):</b> {order.payment.method}\n\n"
+                        )
+                        send_telegram_notification(message)
                         print(f"✅ Order {django_order_id} fully processed via Paymob.")
             except models.Order.DoesNotExist:
                 print(f"❌ Order {django_order_id} not found during Paymob webhook.")

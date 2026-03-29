@@ -224,6 +224,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SITE_ID = 1
 
 
+## Telegram bot
+
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
+TELEGRAM_ADMIN_CHAT_ID = os.environ.get('TELEGRAM_ADMIN_CHAT_ID')
+
 
 ## EMAIL SHIT
 EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"

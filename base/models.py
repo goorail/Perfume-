@@ -265,7 +265,12 @@ class OrderItem(models.Model):
         super().save(*args,**kwargs)
 
     def __str__(self):
-        return self.variant.product.name        
+        # Check if the relationship actually exists before accessing .product
+        if self.variant: # (Change 'variant' to whatever your ForeignKey is named)
+            return f"{self.variant.product.name} - {self.quantity}"
+        
+        # Fallback string if the original product was deleted
+        return f"Unknown/Deleted Product - {self.quantity}"     
 
     class Meta:
         ordering = ['-created_at']

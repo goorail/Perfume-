@@ -125,7 +125,8 @@ Converts the active cart into a static Order and clears the cart components temp
   "full_address": "123 Perfume Lane, Apt 4",
   "phone_number": "+1234567890",
   "country": "United States",
-  "order_notes": "Please leave at the front door."
+  "order_notes": "Please leave at the front door.",
+  "payment_method":"cod"
 }
 ```
 **Possible Errors:**
