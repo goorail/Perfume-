@@ -176,6 +176,7 @@ def get_product_detail(request, pk):
                 'categories',
                 Prefetch('variants', queryset=models.ProductVariant.objects.prefetch_related('images'))
             ).get(pk=pk) # <-- Removed is_active=True here
+            serializer = serializers.DashboardProductDetailSerializer(product)
             
         else:
             # CUSTOMER VIEW: Strictly filter for active product and active variants
@@ -183,8 +184,8 @@ def get_product_detail(request, pk):
                 'categories',
                 Prefetch('variants', queryset=models.ProductVariant.objects.filter(is_active=True).prefetch_related('images'))
             ).get(pk=pk, is_active=True)
+            serializer = serializers.ProductDetailSerializer(product)
 
-        serializer = serializers.ProductDetailSerializer(product)
         return Response(serializer.data)
 
     except models.Product.DoesNotExist:

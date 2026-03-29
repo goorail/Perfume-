@@ -78,6 +78,25 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_categories(self, obj):
         return [cat.name for cat in obj.categories.all()]
 
+class DashboardProductDetailSerializer(serializers.ModelSerializer):
+    variants = VariantSerializer(many=True, read_only=True)
+    categories = serializers.SerializerMethodField()
+    rating = serializers.FloatField(source='average_rating_value', read_only=True)
+
+    class Meta:
+        model = models.Product
+        fields = [
+            'id', 'name', 'name_en', 'name_ar', 
+            'description', 'description_en', 'description_ar', 
+            'categories', 
+            'fragrance_family', 'fragrance_family_en', 'fragrance_family_ar', 
+            'concentration', 'concentration_en', 'concentration_ar', 
+            'variants', 'rating', 'created_at', 'is_active'
+        ]
+
+    def get_categories(self, obj):
+        return [cat.name for cat in obj.categories.all()]
+
 class CartItemSerializer(serializers.ModelSerializer):
     # We use the VariantSerializer to show full details (size, color, image)
     product_id = serializers.CharField(source='variant.product.id')
