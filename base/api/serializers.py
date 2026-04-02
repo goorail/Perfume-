@@ -23,7 +23,8 @@ class GetAllProductListSerializer(serializers.ModelSerializer):
             'review_count',
             'thumbnail', 
             'created_at',
-            'is_active'
+            'is_active',
+            'is_bestseller'
         ]
 
     def get_thumbnail(self, obj):
@@ -74,7 +75,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         model = models.Product
         fields = [
             'id', 'name', 'description', 'categories', 'fragrance_family', 'concentration', 
-            'variants', 'rating', 'created_at','is_active'
+            'variants', 'rating', 'created_at','is_active', 'is_bestseller'
         ]
 
     def get_categories(self, obj):
@@ -93,7 +94,7 @@ class DashboardProductDetailSerializer(serializers.ModelSerializer):
             'categories', 
             'fragrance_family', 'fragrance_family_en', 'fragrance_family_ar', 
             'concentration', 'concentration_en', 'concentration_ar', 
-            'variants', 'rating', 'created_at', 'is_active'
+            'variants', 'rating', 'created_at', 'is_active', 'is_bestseller'
         ]
 
     def get_categories(self, obj):
@@ -340,7 +341,7 @@ class DashboardProductCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Product
-        fields = ['id', 'name_en', 'name_ar', 'categories', 'description_en', 'description_ar', 'fragrance_family_en', 'fragrance_family_ar', 'concentration_en', 'concentration_ar', 'variants']
+        fields = ['id', 'name_en', 'name_ar', 'categories', 'description_en', 'description_ar', 'fragrance_family_en', 'fragrance_family_ar', 'concentration_en', 'concentration_ar', 'variants', 'is_bestseller']
 
     def create(self, validated_data):
         variants_data = validated_data.pop('variants', [])
@@ -375,7 +376,7 @@ class DashboardProductUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Product
-        fields = ['name_en', 'name_ar', 'categories', 'description_en', 'description_ar', 'fragrance_family_en', 'fragrance_family_ar', 'concentration_en', 'concentration_ar', 'is_active']
+        fields = ['name_en', 'name_ar', 'categories', 'description_en', 'description_ar', 'fragrance_family_en', 'fragrance_family_ar', 'concentration_en', 'concentration_ar', 'is_active', 'is_bestseller']
 
     def update(self, instance, validated_data):
         categories_data = validated_data.pop('categories', None)

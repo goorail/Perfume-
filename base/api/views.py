@@ -193,6 +193,27 @@ def get_product_detail(request, pk):
     except models.Product.DoesNotExist:
         return Response({"error": _("Product not found")}, status=404)
 ###
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_best_sellers(request):
+    """
+    Returns the explicitly marked BEST SELLER products for the homepage.
+    """
+    queryset = models.Product.objects.filter(
+        is_active=True, 
+        is_bestseller=True
+    ).annotate(
+        lowest_price=Min('variants__price'),
+        highest_price=Max('variants__price'),
+        average_rating=Avg('reviews__rating'),
+        review_count=Count('reviews', distinct=True)
+    ).prefetch_related('categories',
+        Prefetch('variants', queryset=models.ProductVariant.objects.filter(is_active=True).prefetch_related('images'))
+    )[:16]  # Get up to 16 best sellers
+
+    serializer = serializers.GetAllProductListSerializer(queryset, many=True)
+    return Response(serializer.data)
+
 
 
 
@@ -1666,7 +1687,7 @@ def get_top_sales_chart_info(request):
     """
     top_styles = (
         models.ProductVariant.objects
-        .filter(orderitem__order__status='paid') # Only paid orders
+        .filter(orderitem__order__status='delivered') # Only delivered orders
         
         # 1. GROUP BY Product Name and Volume
         # This groups "Dior Sauvage 100ml" together
@@ -1676,7 +1697,7 @@ def get_top_sales_chart_info(request):
         .annotate(total_sold=Sum('orderitem__quantity'))
         
         # 3. Sort by highest sales
-        .order_by('-total_sold')[:5]
+        .order_by('-total_sold')[:16]
     )
 
     return Response({"topSelling": top_styles}, status=status.HTTP_200_OK)

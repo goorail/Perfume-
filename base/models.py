@@ -116,6 +116,7 @@ class Product(models.Model):
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    is_bestseller = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
