@@ -32,6 +32,11 @@ from django.conf import settings
 from django.http import JsonResponse
 from rest_framework.parsers import MultiPartParser, FormParser
 
+from rest_framework_simplejwt.views import TokenRefreshView
+
+class CustomTokenRefreshView(TokenRefreshView):
+    serializer_class = serializers.CustomTokenRefreshSerializer
+
 ################################# Auth
 @api_view(['POST'])
 @permission_classes([UnAuthenticated])

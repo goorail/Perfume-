@@ -465,3 +465,16 @@ class DashboardSiteSettingsSerializer(serializers.ModelSerializer):
         if validated_data.get('announcement_text_en') and not validated_data.get('announcement_text_ar'):
             validated_data['announcement_text_ar'] = validated_data['announcement_text_en']
         return super().update(instance, validated_data)
+
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.exceptions import InvalidToken
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    def validate(self, attrs):
+        try:
+            return super().validate(attrs)
+        except User.DoesNotExist:
+            raise InvalidToken(_("User matching this token does not exist."))

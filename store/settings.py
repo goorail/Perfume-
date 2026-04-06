@@ -32,7 +32,6 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
 CORS_ALLOW_ALL_ORIGINS = True
 ALLOWED_HOSTS = ['*']
 CORS_PREFLIGHT_MAX_AGE = 86400
@@ -127,7 +126,7 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     # Token life span
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=50),  # Short life for security
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # Short life for security
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),  # Longer life for convenience
 
     # Other useful settings
