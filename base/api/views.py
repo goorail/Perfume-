@@ -1832,15 +1832,25 @@ def google_login(request):
         email = idinfo['email']
         first_name = idinfo.get('given_name', '')
         last_name = idinfo.get('family_name', '')
+        
+        # Combine into full_name as expected by the rest of the application
+        full_name = f"{first_name} {last_name}".strip()
+        if not full_name:
+            full_name = email.split('@')[0]  # Fallback just in case
 
         # Get or Create the user (No username needed!)
         user, created = User.objects.get_or_create(email=email, defaults={
             'first_name': first_name,
             'last_name': last_name,
+            'full_name': full_name,
         })
 
         if created:
             user.set_unusable_password()
+            user.save()
+        elif not user.full_name:
+            # Fix existing users who logged in before we started saving full_name
+            user.full_name = full_name
             user.save()
 
         # Generate JWT Tokens
@@ -1852,7 +1862,7 @@ def google_login(request):
             'user': {
                 'id': user.id,
                 'email': user.email,
-                'first_name': user.first_name,
+                'full_name': user.full_name,
             },
             'is_new_user': created
         }, status=status.HTTP_200_OK)
