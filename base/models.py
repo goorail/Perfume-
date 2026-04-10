@@ -228,7 +228,7 @@ class WishList(models.Model):
 
 class Order(DirtyFieldsMixin,models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    customer = models.ForeignKey(User,on_delete=models.CASCADE)
+    customer = models.ForeignKey(User,on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     # Biling details
@@ -236,6 +236,8 @@ class Order(DirtyFieldsMixin,models.Model):
     full_address = models.CharField(max_length=300)
     order_notes = models.TextField(blank=True,null=True, default="")
     phone_number = models.CharField(max_length=25)
+    guest_email = models.EmailField(blank=True, null=True)
+    device_id = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     country = models.CharField(max_length=100, default="Egypt")
     governorate = models.ForeignKey(Governorate, on_delete=models.SET_NULL, null=True, blank=True)
     shipping_fee = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
@@ -292,7 +294,7 @@ class OrderItem(models.Model):
         ordering = ['-created_at']
 
 class Payment(models.Model):
-    customer = models.ForeignKey(User,on_delete=models.CASCADE,related_name='payments')
+    customer = models.ForeignKey(User,on_delete=models.CASCADE,related_name='payments', null=True, blank=True)
     order = models.OneToOneField(Order,on_delete=models.CASCADE,related_name='payment')
     amount = models.DecimalField(decimal_places=2,max_digits=10)
 

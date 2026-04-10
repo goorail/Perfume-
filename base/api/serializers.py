@@ -178,7 +178,7 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Order
         fields = ['id', 'status', 'total_price', 'created_at', 'items', 
-                  'full_name', 'full_address', 'phone_number', 'country',
+                  'full_name', 'full_address', 'phone_number', 'country', 'guest_email',
                   'shipping_fee', 'governorate_name']
         read_only_fields = ['id', 'status', 'total_price', 'created_at', 'items', 'shipping_fee', 'governorate_name']
 
@@ -186,7 +186,7 @@ class CreateOrderSerializer(serializers.ModelSerializer):
     governorate_id = serializers.IntegerField(write_only=True, required=True, help_text="ID of the shipping Governorate")
     class Meta:
         model = models.Order
-        fields = ['full_name', 'full_address', 'phone_number', 'country', 'order_notes', 'governorate_id']
+        fields = ['full_name', 'full_address', 'phone_number', 'country', 'order_notes', 'governorate_id', 'guest_email']
 
 class ReviewSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(source='customer.full_name', read_only=True)
@@ -254,7 +254,7 @@ class DashBoardOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Order
         fields = ['id', 'status', 'total_price', 'created_at', 'items', 
-                  'full_name', 'full_address', 'phone_number', 'country', 'payment_method',
+                  'full_name', 'full_address', 'phone_number', 'country', 'guest_email', 'payment_method',
                   'shipping_fee', 'governorate_name_en', 'governorate_name_ar']
         read_only_fields = ['id', 'status', 'total_price', 'created_at', 'items', 'shipping_fee']
 

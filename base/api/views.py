@@ -436,22 +436,40 @@ def merge_cart(request):
 ###### Orders
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 @transaction.atomic
 def place_order(request):
-    # Lock the cart to prevent concurrent orders with the same items
+    is_authenticated = request.user.is_authenticated
+    device_id = request.headers.get('X-Device-ID')
+
+    # --- 0. Resolve Cart (authenticated user or guest via device-ID) ---
     try:
-        cart = models.Cart.objects.select_for_update().get(customer=request.user)
+        if is_authenticated:
+            cart = models.Cart.objects.select_for_update().get(customer=request.user)
+        else:
+            if not device_id:
+                return Response({"error": _("Device ID is required for guest checkout.")}, status=status.HTTP_400_BAD_REQUEST)
+            cart = models.Cart.objects.select_for_update().get(device_id=device_id, customer__isnull=True)
     except models.Cart.DoesNotExist:
         return Response({"error": _("Cart not found.")}, status=status.HTTP_404_NOT_FOUND)
+
     if not cart.items.exists():
         return Response({"error": _("Cart is empty")}, status=400)
         
     # Prevent double submission from quick multiple clicks
-    recent_order = models.Order.objects.filter(
-        customer=request.user,
-        created_at__gte=timezone.now() - timedelta(seconds=10)
-    ).exists()
+    if is_authenticated:
+        recent_order = models.Order.objects.filter(
+            customer=request.user,
+            created_at__gte=timezone.now() - timedelta(seconds=10)
+        ).exists()
+    else:
+        # For guests, check by phone number + time window
+        phone = request.data.get('phone_number', '')
+        recent_order = models.Order.objects.filter(
+            customer__isnull=True,
+            phone_number=phone,
+            created_at__gte=timezone.now() - timedelta(seconds=10)
+        ).exists() if phone else False
 
     if recent_order:
         return Response(
@@ -497,12 +515,14 @@ def place_order(request):
 
     # --- 3. SAFE TO CREATE ---
     order = models.Order.objects.create(
-        customer=request.user,
+        customer=request.user if is_authenticated else None,
         full_name=serializer.validated_data['full_name'],
         full_address=serializer.validated_data['full_address'],
         phone_number=serializer.validated_data.get('phone_number'),
         country=serializer.validated_data.get('country'),
         order_notes=serializer.validated_data.get('order_notes'),
+        guest_email=serializer.validated_data.get('guest_email', ''),
+        device_id=device_id if not is_authenticated else None,
         governorate=governorate,
         shipping_fee=governorate.shipping_fee,
         status='pending'  # Temporary, will be updated below
@@ -527,7 +547,7 @@ def place_order(request):
         cart.items.all().delete()
 
         models.Payment.objects.create(
-            customer=request.user,
+            customer=request.user if is_authenticated else None,
             order=order,
             amount=order.total_price,
             method='cod',
@@ -537,14 +557,17 @@ def place_order(request):
         order.status = 'pending'
         order.save()
         order_price = order.total_price-order.shipping_fee
+        customer_label = order.full_name if is_authenticated else f"{order.full_name} (Guest)"
         payment_method = "كاش عند الاستلام"
+        guest_email_line = f"📧 <b>Guest Email(إيميل الضيف):</b> {order.guest_email}\n" if order.guest_email else ""
         message = (
             f"🚨 <b>NEW ORDER RECEIVED!</b> 🚨\n\n"
             f"🛒 <b>Order ID(رقم الطلب):</b> #{order.id}\n"
-            f"👤 <b>Customer(العميل):</b> {order.full_name}\n"
+            f"👤 <b>Customer(العميل):</b> {customer_label}\n"
             f"👤 <b>Customer Number(رقم العميل):</b> {order.phone_number}\n"
             f"👤 <b>Customer Address(عنوان العميل):</b> {order.full_address}\n"
             f"👤 <b>Order Notes(ملاحظات الطلب):</b> {order.order_notes}\n"
+            f"{guest_email_line}"
             f"👤 <b>Order Price(سعر الطلب):</b> {order_price}\n"
             f"👤 <b>Shipping Fee(سعر الشحن):</b> {order.shipping_fee}\n"
             f"💵 <b>Total(المبلغ):</b> {order.total_price} EGP\n"
@@ -680,6 +703,30 @@ def toggle_wishlist(request):
 
 
 
+
+############## Payment Helpers #############
+
+def get_order_for_payment(request, order_id):
+    """Fetch an order verifying ownership for both authenticated and guest users."""
+    if request.user.is_authenticated:
+        return models.Order.objects.select_related('governorate').prefetch_related(
+            Prefetch('items', queryset=models.OrderItem.objects.select_related('variant__product'))
+        ).get(id=order_id, customer=request.user)
+    else:
+        device_id = request.headers.get('X-Device-ID')
+        if not device_id:
+            raise models.Order.DoesNotExist
+        return models.Order.objects.select_related('governorate').prefetch_related(
+            Prefetch('items', queryset=models.OrderItem.objects.select_related('variant__product'))
+        ).get(id=order_id, device_id=device_id, customer__isnull=True)
+
+def clear_cart_for_order(order):
+    """Clear the correct cart after payment — by customer or device_id."""
+    if order.customer:
+        models.Cart.objects.filter(customer=order.customer).delete()
+    elif order.device_id:
+        models.Cart.objects.filter(device_id=order.device_id, customer__isnull=True).delete()
+
 ############## Payment Integration (Paypal) #############
 
 def get_paypal_access_token():
@@ -694,7 +741,7 @@ def get_paypal_access_token():
     return resp.json()['access_token']
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def create_paypal_order(request):
     access_token = get_paypal_access_token()
     
@@ -708,7 +755,7 @@ def create_paypal_order(request):
 
     # Fetch the order to get the real price (Security)
     try:
-        order = models.Order.objects.get(id=django_order_id, customer=request.user)
+        order = get_order_for_payment(request, django_order_id)
     except models.Order.DoesNotExist:
         return JsonResponse({'error': _('Order not found')}, status=404)
 
@@ -752,7 +799,7 @@ def create_paypal_order(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def capture_paypal_order(request):
     # 1. Get the PayPal Order ID from the frontend
     paypal_order_id = request.data.get('orderID') 
@@ -819,8 +866,8 @@ def capture_paypal_order(request):
                     item.variant.save()
 
                 # 5. Clear Cart
-                # We use filter().delete() which handles "does not exist" cases gracefully
-                models.Cart.objects.filter(customer=order.customer).delete()
+                # We use the helper which handles both authenticated and guest carts
+                clear_cart_for_order(order)
                 
                 # 6. (Optional) Save the Transaction ID for records
                 models.Payment.objects.create(
@@ -849,21 +896,18 @@ def capture_paypal_order(request):
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def create_checkout_session(request):
     """
     Creates the Stripe session and returns the URL to redirect the user to.
     """
-    user = request.user
     order_id = request.data.get('order_id') # Changed from 'django_order_id' to match frontend usually
     
     if not order_id:
         return Response({"error": _("order_id is required")}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
-        order = models.Order.objects.prefetch_related(
-            Prefetch('items', queryset=models.OrderItem.objects.select_related('variant__product'))
-        ).get(id=order_id, customer=user)
+        order = get_order_for_payment(request, order_id)
     except models.Order.DoesNotExist:
         return Response({"error": _("Order not found")}, status=status.HTTP_404_NOT_FOUND)
     
@@ -905,7 +949,6 @@ def create_checkout_session(request):
             cancel_url=request.data.get('cancel_url', settings.DOMAIN_URL + 'payment-cancel/'),
             metadata={
                 'order_id': str(order.id),
-                'customer_id': str(user.id)
             }
         )
 
@@ -961,8 +1004,8 @@ def stripe_webhook(request):
                         item.variant.stock = F('stock') - item.quantity
                         item.variant.save()
 
-                    # 5. Clear the User's Cart
-                    models.Cart.objects.filter(customer=order.customer).delete()
+                    # 5. Clear the Cart (handles both authenticated and guest)
+                    clear_cart_for_order(order)
 
                     # 6. Create Payment Record
                     models.Payment.objects.create(
@@ -991,7 +1034,7 @@ import hmac
 import hashlib
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def paymob_checkout(request):
     order_id = request.data.get('order_id')
     payment_method = request.data.get('payment_method', 'card')
@@ -1001,9 +1044,7 @@ def paymob_checkout(request):
         return Response({"error": _("order_id is required")}, status=status.HTTP_400_BAD_REQUEST)
         
     try:
-        order = models.Order.objects.select_related('governorate').prefetch_related(
-            Prefetch('items', queryset=models.OrderItem.objects.select_related('variant__product'))
-        ).get(id=order_id, customer=request.user)
+        order = get_order_for_payment(request, order_id)
     except models.Order.DoesNotExist:
         return Response({"error": _("Order not found")}, status=status.HTTP_404_NOT_FOUND)
         
@@ -1064,11 +1105,14 @@ def paymob_checkout(request):
     paymob_order_id = order_response.json().get('id')
     
     # 3. Payment Key Request
+    # Build billing data — use order data (works for both auth and guest)
+    name_parts = order.full_name.split() if order.full_name else ['Guest']
+    billing_email = (request.user.email if request.user.is_authenticated else order.guest_email) or 'na@na.com'
     billing_data = {
         "apartment": "NA", 
-        "email": getattr(request.user, 'email', 'na@na.com'), 
+        "email": billing_email, 
         "floor": "NA", 
-        "first_name": request.user.full_name.split()[0] if getattr(request.user, 'full_name', '') else "Guest",
+        "first_name": name_parts[0],
         "street": order.full_address or "NA", 
         "building": "NA", 
         "phone_number": order.phone_number or "NA", 
@@ -1076,7 +1120,7 @@ def paymob_checkout(request):
         "postal_code": "NA", 
         "city": "NA", 
         "country": order.country or "EG", 
-        "last_name": request.user.full_name.split()[-1] if len(getattr(request.user, 'full_name', '').split()) > 1 else "Guest", 
+        "last_name": name_parts[-1] if len(name_parts) > 1 else "Guest", 
         "state": "NA"
     }
     
@@ -1209,7 +1253,7 @@ def paymob_webhook(request):
                             item.variant.stock = F('stock') - item.quantity
                             item.variant.save()
                             
-                        models.Cart.objects.filter(customer=order.customer).delete()
+                        clear_cart_for_order(order)
                         
                         models.Payment.objects.create(
                             customer=order.customer,
