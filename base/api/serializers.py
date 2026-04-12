@@ -223,13 +223,19 @@ class DashBoardOrderStatusSerializer(serializers.ModelSerializer):
 
     def validate_status(self, value):
         # 1. Check valid choices
-        valid_statuses = ["cancelled", "delivered", "shipped", "paid", "pending", "awaiting_payment"]
+        valid_statuses = ["cancelled", "delivered", "shipped", "paid", "pending", "awaiting_payment", "refunded"]
         if value not in valid_statuses:
             raise serializers.ValidationError(_("Invalid status choice."))
         
         # 2. Check logic (e.g., can't manually set to paid)
         if value == 'paid':
              raise serializers.ValidationError(_("You cannot manually mark an order as Paid."))
+
+        # 3. Refund only allowed for paid/shipped/delivered orders
+        if value == 'refunded':
+            current_status = self.instance.status if self.instance else None
+            if current_status not in ['paid', 'shipped', 'delivered']:
+                raise serializers.ValidationError(_("You can only refund orders that are Paid, Shipped, or Delivered."))
              
         return value
 

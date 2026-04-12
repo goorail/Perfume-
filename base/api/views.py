@@ -1462,6 +1462,7 @@ def get_dashboard_stats(request):
         delivered=Count('id', filter=Q(status='delivered')),
         shipped=Count('id', filter=Q(status='shipped')),
         cancelled=Count('id', filter=Q(status='cancelled')),
+        refunded=Count('id', filter=Q(status='refunded')),
         # ... add others
     )
 
@@ -1510,6 +1511,15 @@ def order_detail_action(request, pk):
     elif request.method == 'PATCH':
         serializer = serializers.DashBoardOrderStatusSerializer(order, data=request.data, partial=True)
         if serializer.is_valid():
+            new_status = serializer.validated_data.get('status')
+
+            # Restore stock when refunding
+            if new_status == 'refunded':
+                for item in order.items.select_related('variant'):
+                    if item.variant:
+                        item.variant.stock = F('stock') + item.quantity
+                        item.variant.save()
+
             serializer.save()
             return Response({'message': _('Status updated'), 'status': order.status})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

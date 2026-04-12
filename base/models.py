@@ -254,6 +254,7 @@ class Order(DirtyFieldsMixin,models.Model):
     ("shipped", "Shipped"),
     ("delivered", "Delivered"),
     ("cancelled", "Cancelled"),
+    ("refunded", "Refunded"),
 ]
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True)
