@@ -4,6 +4,10 @@ This document provides a reference for the required JSON bodies to send in the `
 
 > [!NOTE] 
 > All requests must have `Content-Type: application/json` unless specified otherwise (like image uploads). Protected routes require the `Authorization: Bearer <access_token>` header. Guest cart operations may require a `X-Device-ID` header.
+> 
+> **Internationalization (i18n):** Send the `Accept-Language: ar` or `Accept-Language: en` header with every request. The API will automatically translate response data and error messages exactly as requested. When creating or updating translated fields (e.g., Products, Categories, Settings), you must send both `_en` and `_ar` versions in the payload.
+> 
+> **Dashboard Errors:** All `/api/dashboard/...` and `/api/charts/...` endpoints **always return error messages in Arabic**, regardless of the `Accept-Language` header.
 
 ## 1. Authentication (`/api/auth/...`)
 
@@ -17,6 +21,9 @@ Registers a new user.
   "password2": "strongpassword123"
 }
 ```
+**Possible Errors:**
+* `400 Bad Request`: `{"error": "passwords doesn't match"}`
+* `400 Bad Request`: `{"error": "Registeration failed,Try again"}`
 
 ### `POST /api/auth/login/`
 Returns a JWT access and refresh token.
@@ -26,6 +33,8 @@ Returns a JWT access and refresh token.
   "password": "strongpassword123"
 }
 ```
+**Possible Errors:**
+* `401 Unauthorized`: `{"detail": "No active account found with the given credentials"}`
 
 ### `POST /api/auth/token/refresh/`
 Refreshes an expired access token using the refresh token.
@@ -34,6 +43,8 @@ Refreshes an expired access token using the refresh token.
   "refresh": "eyJhbGciOiJIUzI1NiJ9..."
 }
 ```
+**Possible Errors:**
+* `401 Unauthorized`: `{"detail": "Token is invalid or expired"}`
 
 ### `POST /api/auth/logout/`
 Blacklists the refresh token.
@@ -42,6 +53,9 @@ Blacklists the refresh token.
   "refresh": "eyJhbGciOiJIUzI1NiJ9..."
 }
 ```
+**Possible Errors:**
+* `400 Bad Request`: `{"error": "Refresh token required"}`
+* `400 Bad Request`: `{"error": "Invalid token"}`
 
 ### `POST /api/password_reset/`
 Triggers a password reset token to be generated and sends an email to the provided e-mail address.
@@ -72,6 +86,9 @@ Adds an item to the cart. If the user is unauthenticated, ensure you send the `X
   "quantity": 2
 }
 ```
+**Possible Errors:**
+* `400 Bad Request`: `{"error": "Not enough stock. You have X, can only add Y more."}`
+* `404 Not Found`: if variant doesn't exist.
 
 ### `PATCH /api/cart/update/<item_id>/`
 Updates the quantity of a specific cart item matching the `item_id` (not the variant_id). Sending a quantity of `< 1` deletes the item.
@@ -80,6 +97,9 @@ Updates the quantity of a specific cart item matching the `item_id` (not the var
   "quantity": 3
 }
 ```
+**Possible Errors:**
+* `400 Bad Request`: `{"error": "Exceeds available stock"}`
+* `404 Not Found`: if the item is not in the cart.
 
 ### `POST /api/cart/merge/`
 Merges a guest cart into an authenticated user's cart (call this immediately after a successful login).
@@ -88,22 +108,34 @@ Merges a guest cart into an authenticated user's cart (call this immediately aft
   "device_id": "your-locally-generated-guest-uuid"
 }
 ```
+**Possible Responses/Errors:**
+* `200 OK` (Message): `{"message": "No guest cart to merge"}`
+* `200 OK` (Message): `{"message": "Guest cart not found or already merged"}`
+* `200 OK` (Message): `{"message": "Carts merged successfully!"}`
 
 ---
 
 ## 3. Order & Checkout (`/api/orders/...`)
 
 ### `POST /api/orders/place/`
-Converts the active cart into a static Order and clears the cart components temporarily. Returns an `order_id` to be used for Stripe/Paypal session creation.
+Converts the active cart into a static Order and clears the cart components temporarily. Returns an `order_id` to be used for Stripe/Paypal session creation. The `governorate_id` is **required** — get the list of available governorates from `GET /api/shipping/governorates/`. The shipping fee is automatically copied from the selected governorate into the order.
 ```json
 {
   "full_name": "John Doe",
   "full_address": "123 Perfume Lane, Apt 4",
   "phone_number": "+1234567890",
-  "country": "United States",
-  "order_notes": "Please leave at the front door."
+  "country": "Egypt",
+  "order_notes": "Please leave at the front door.",
+  "governorate_id": 1,
+  "payment_method": "cod"
 }
 ```
+**Possible Errors:**
+* `400 Bad Request`: `{"error": "Cart is empty"}`
+* `400 Bad Request`: `{"error": "Selected governorate is not available for shipping."}`
+* `400 Bad Request`: `{"error": "Sorry, [Product Name] ([Volume]) is no longer available."}`
+* `400 Bad Request`: `{"error": "Product [Name] is out of stock. Only X left."}`
+* `429 Too Many Requests`: `{"error": "Please wait a moment before placing another order."}`
 
 ---
 
@@ -118,6 +150,10 @@ Initiates a Stripe checkout session. Returns a `{ "url": "..." }` to redirect th
   "cancel_url": "https://yourfrontend.com/payment-cancel/"
 }
 ```
+**Possible Errors:**
+* `400 Bad Request`: `{"error": "order_id is required"}`
+* `400 Bad Request`: `{"error": "Order is already paid"}`
+* `404 Not Found`: `{"error": "Order not found"}`
 
 ### `POST /api/paypal/create-order/` (PayPal)
 Creates a PayPal order intent. 
@@ -126,6 +162,9 @@ Creates a PayPal order intent.
   "order_id": "uuid-of-order-from-place-order"
 }
 ```
+**Possible Errors:**
+* `400 Bad Request`: `{"error": "Order ID is required"}`
+* `404 Not Found`: `{"error": "Order not found"}`
 
 ### `POST /api/paypal/capture-order/` (PayPal)
 Captures the paypal payment after the user approves it on the frontend.
@@ -134,6 +173,11 @@ Captures the paypal payment after the user approves it on the frontend.
   "orderID": "paypal-provided-order-id"
 }
 ```
+**Possible Errors:**
+* `400 Bad Request`: `{"error": "Could not link PayPal transaction to Order"}`
+* `400 Bad Request`: `{"error": "Payment not completed"}`
+* `404 Not Found`: `{"error": "Order ID not found in database"}`
+* `200 OK` (Message): `{"message": "Order already processed"}`
 
 ### `POST /api/payment/paymob/create-checkout/` (Paymob)
 Initiates a Paymob checkout session. Returns the iframe checkout UI URL.
@@ -150,6 +194,11 @@ Initiates a Paymob checkout session. Returns the iframe checkout UI URL.
   "iframe_id": "123456"
 }
 ```
+**Possible Errors:**
+* `400 Bad Request`: `{"error": "order_id is required"}`
+* `404 Not Found`: `{"error": "Order not found"}`
+* `500 Server Error`: `{"error": "Failed to authenticate with Paymob"}`
+* `500 Server Error`: `{"error": "Failed to register order with Paymob"}`
 
 ---
 
@@ -162,6 +211,9 @@ Adds to or removes from the wishlist.
   "product_id": 12
 }
 ```
+**Possible Messages (200 OK):**
+* `{"message": "Removed from wishlist", "added": False}`
+* `{"message": "Added to wishlist", "added": True}`
 
 ### `POST /api/reviews/add/`
 Adds a review for a specific product.
@@ -172,6 +224,8 @@ Adds a review for a specific product.
   "comment": "Smells amazing!"
 }
 ```
+**Possible Errors:**
+* `400 Bad Request`: `{"error": "You have already reviewed this product."}`
 
 ---
 
@@ -179,23 +233,50 @@ Adds a review for a specific product.
 
 *Note: Requires Admin / Staff Privileges.*
 
+### `GET /api/dashboard/categories/`
+Fetches the list of all categories. **Note:**
+- If accessed by a non-admin (or without `?all=true`), it returns only active categories.
+- Admins can append `?all=true` to get all categories (including deactivated ones).
+
 ### `POST /api/dashboard/categories/`
-Creates a brand new product category.
+Creates a brand new product category. **(Multi-Language Supported)**
 ```json
 {
-  "name": "Men's Fragrances"
+  "name_en": "Men's Fragrances",
+  "name_ar": "عطور رجالية"
 }
 ```
 
-### `POST /api/dashboard/products/create/`
-Creates a new Product. Note the newly updated perfume fields. You can now pass the string `name` for `category` instead of the ID. Optionally, you can pass a variants array to create variants at the same time.
+### `PATCH /api/dashboard/categories/<category_id>/`
+Updates an existing category's properties. **(Multi-Language Supported)**
 ```json
 {
-  "name": "Sauvage",
-  "category": "Men's Fragrances", 
-  "description": "A radically fresh composition.",
-  "fragrance_family": "Woody",
-  "concentration": "Eau de Parfum",
+  "name_en": "Men's Perfume",
+  "name_ar": "عطور رجالية",
+  "is_active": false
+}
+```
+
+### `DELETE /api/dashboard/categories/<category_id>/`
+Soft deletes (deactivates) a category. This will set `is_active=False`.
+If you want to permanently delete the category from the database, append `?hard=true` to the URL. Note that hard-deleting a category that has products assigned to it will return a 400 Bad Request.
+
+
+### `POST /api/dashboard/products/create/`
+Creates a new Product. **(Multi-Language Supported for Strings)**
+**Required fields:** `name_en`, `description_en`.
+**Categories:** Pass an **array** of category name strings in `categories`. A product can belong to multiple categories. Optionally, you can pass a `variants` array to create variants at the same time.
+```json
+{
+  "name_en": "Sauvage",
+  "name_ar": "سوفاج",
+  "categories": ["Men's Fragrances", "Oud"],
+  "description_en": "A radically fresh composition.",
+  "description_ar": "تركيبة منعشة جذرياً.",
+  "fragrance_family_en": "Woody",
+  "fragrance_family_ar": "خشبي",
+  "concentration_en": "Eau de Parfum",
+  "concentration_ar": "او دي بارفان",
   "variants": [
     {
       "volume": "100ml",
@@ -206,17 +287,21 @@ Creates a new Product. Note the newly updated perfume fields. You can now pass t
   ]
 }
 ```
+**Possible Errors:** Standard Form Validation Errors (always in Arabic).
 
 ### `PATCH /api/dashboard/products/<product_id>/manage/`
-Updates an existing product. 
-**Important**: Note that `category` lookup works via a string `name` for the patch request rather than the ID, based on the `SlugRelatedField` configuration in the backend serializer.
+Updates an existing product. **(Multi-Language Supported)** Pass `categories` as an array to replace all current categories.
 ```json
 {
-  "name": "Sauvage Classic",
-  "category": "Men's Fragrances", 
-  "description": "A radically fresh composition.",
-  "fragrance_family": "Woody",
-  "concentration": "Eau de Parfum",
+  "name_en": "Sauvage Classic",
+  "name_ar": "سوفاج كلاسيك",
+  "categories": ["Men's Fragrances", "Oud"],
+  "description_en": "A radically fresh composition.",
+  "description_ar": "تركيبة منعشة جذرياً.",
+  "fragrance_family_en": "Woody",
+  "fragrance_family_ar": "خشبي",
+  "concentration_en": "Eau de Parfum",
+  "concentration_ar": "او دي بارفان",
   "is_active": true
 }
 ```
@@ -249,10 +334,19 @@ Uploads an image for the variant.
 > **IMPORTANT: Do NOT send this as JSON.**
 > You must send this request as `multipart/form-data`.
 > Send one field: `img` (File Blob)
+**Possible Errors:**
+* `400 Bad Request`: `{"error": "No image file provided (key 'img' missing)."}`
 
 ---
 
-## 7. Banner Management (`/api/banners/` & `/api/dashboard/banners/`)
+## 7. Products (Public)
+
+### `GET /api/products/top-selling-overall/`
+Fetches the absolute highest-selling product locally evaluated based on historical order amounts. Returns a single product object preloaded with its full variant capabilities and a `sales_count` property.
+
+---
+
+## 8. Banner Management (`/api/banners/` & `/api/dashboard/banners/`)
 
 ### `GET /api/banners/` (Public)
 Fetches all currently active banners for the storefront hero carousel, ordered by the `order` field.
@@ -262,8 +356,10 @@ Fetches all currently active banners for the storefront hero carousel, ordered b
   {
     "id": 1,
     "title": "Summer Sale",
-    "image": "image/upload/v1/banners/xyzz...",
-    "img_url": "https://res.cloudinary.com/.../banners/xyzz...",
+    "desktop_image": "image/upload/v1/banners/xyzz...",
+    "mobile_image": "image/upload/v1/banners/mobile/abcc...",
+    "desktop_img_url": "https://res.cloudinary.com/.../banners/xyzz...",
+    "mobile_img_url": "https://res.cloudinary.com/.../banners/mobile/abcc...",
     "link": "https://example.com/summer-sale",
     "is_active": true,
     "order": 1,
@@ -276,32 +372,35 @@ Fetches all currently active banners for the storefront hero carousel, ordered b
 Fetches all banners, including inactive ones, for the admin dashboard.
 
 ### `POST /api/dashboard/banners/` (Admin)
-Creates a new banner. Note that you must send this request as `multipart/form-data` to handle the `image` file upload.
+Creates a new banner. Note that you must send this request as `multipart/form-data` to handle the file uploads. Because of the Multi-Language update, instead of sending `title`, append `title_en` and `title_ar` to your FormData.
 ```json
 {
-  "title": "New Arrival Promotion",
+  "title_en": "New Arrival Promotion",
+  "title_ar": "عرض وصل حديثا",
   "link": "https://example.com/new-arrivals",
   "order": 2,
   "is_active": true
 }
 ```
-*Plus an `image` File Blob in the FormData object.*
+*Plus `desktop_image` (required) and `mobile_image` (optional) File Blobs in the FormData object.*
 
 ### `PATCH /api/dashboard/banners/<banner_id>/` (Admin)
-Updates a specific banner. Common use cases are toggling the `is_active` status or changing the `order` using typical JSON payloads.
+Updates a specific banner. Common use cases are toggling the `is_active` status or changing the `order` using typical JSON payloads. **(Multi-Language Supported for Title)**
 ```json
 {
   "is_active": false,
-  "order": 5
+  "order": 5,
+  "title_en": "New Arrival Promotion",
+  "title_ar": "عرض وصل حديثا"
 }
 ```
 
 ### `DELETE /api/dashboard/banners/<banner_id>/` (Admin)
-Permanently deletes the banner and its associated image from the database.
+Permanently deletes the banner and its associated images from the database.
 
 ---
 
-## 8. Site Settings (`/api/settings/` & `/api/dashboard/settings/`)
+## 9. Site Settings (`/api/settings/` & `/api/dashboard/settings/`)
 
 ### `GET /api/settings/` (Public)
 Fetches the global site configurations, such as the top announcement bar text. Call this once when the application boots up to display the top bar.
@@ -318,10 +417,11 @@ Fetches the global site configurations, such as the top announcement bar text. C
 Fetches the global site configurations for the admin dashboard. The response format is exactly the same as the public endpoint.
 
 ### `PATCH /api/dashboard/settings/` (Admin)
-Updates the global site configurations. Because there is only ever *one* settings object, you don't need to pass an ID in the URL.
+Updates the global site configurations. Because there is only ever *one* settings object, you don't need to pass an ID in the URL. **(Multi-Language Supported)**
 ```json
 {
-  "announcement_text": "Happy Eid - 20% Off Everything!",
+  "announcement_text_en": "Happy Eid - 20% Off Everything!",
+  "announcement_text_ar": "عيد مبارك - خصم 20% على كل شيء!",
   "is_announcement_active": true
 }
 ```

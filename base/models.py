@@ -27,7 +27,7 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     username = None  # Removes username field
     email = models.EmailField(unique=True)
-    full_name = models.CharField(max_length=100)
+    full_name = models.CharField(max_length=100,null=True)
 
     # LINK THE NEW MANAGER HERE
     objects = UserManager()
@@ -36,25 +36,38 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ['full_name']
 
     def __str__(self):
-        return self.full_name
+        return self.full_name or self.email
     
 
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+class Governorate(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    shipping_fee = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('50.00'))
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
 
 class Banner(models.Model):
     title = models.CharField(max_length=200)
-    image = CloudinaryField("banners/", null=True)
-    link = models.URLField(max_length=500, blank=True, null=True)
+    desktop_image = CloudinaryField("banners/", null=True)
+    mobile_image = CloudinaryField("banners/mobile/", null=True, blank=True)
+    link = models.URLField(max_length=500, blank=True, default="")
     is_active = models.BooleanField(default=True)
     order = models.IntegerField(default=0, help_text="Order in which banner appears (lower numbers first)")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['order', '-created_at']
+        indexes = [
+            models.Index(fields=['order', '-created_at']),
+        ]
 
     def __str__(self):
         return self.title
@@ -64,8 +77,8 @@ class SiteSettings(models.Model):
     # We will enforce this in the save method
     
     # --- Top Announcement Bar ---
-    announcement_text = models.CharField(max_length=255, blank=True, null=True, help_text="e.g. Free shipping for orders over $2000")
-    announcement_link = models.URLField(max_length=500, blank=True, null=True, help_text="Optional link when clicking the top bar")
+    announcement_text = models.CharField(max_length=255, blank=True, default="", help_text="e.g. Free shipping for orders over $2000")
+    announcement_link = models.URLField(max_length=500, blank=True, default="", help_text="Optional link when clicking the top bar")
     is_announcement_active = models.BooleanField(default=True)
     
     # --- Optional future additions ---
@@ -94,16 +107,17 @@ class SiteSettings(models.Model):
 class Product(models.Model):
     # Core Identity
     name = models.CharField(max_length=255)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
+    categories = models.ManyToManyField(Category, blank=True, related_name='products')
     description = models.TextField()
     
     # Perfume Specifics
-    fragrance_family = models.CharField(max_length=255, null=True, blank=True)
-    concentration = models.CharField(max_length=255, null=True, blank=True)
+    fragrance_family = models.CharField(max_length=255, blank=True, default="")
+    concentration = models.CharField(max_length=255, blank=True, default="")
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    is_bestseller = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -174,7 +188,7 @@ class ProductVariant(models.Model):
 class ProductImage(models.Model):
     variant = models.ForeignKey(ProductVariant, related_name='images', on_delete=models.CASCADE)
     img = CloudinaryField("products/",null=True)
-    is_thumbnail = models.BooleanField(default=False)
+    is_thumbnail = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         ordering = ['-is_thumbnail', 'id']
@@ -192,7 +206,7 @@ class Review(models.Model):
     product = models.ForeignKey(Product,on_delete=models.CASCADE,related_name='reviews')
     rating = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])  #1–5 stars
     comment = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         unique_together = ("product", "customer")  # one review per customer per product
@@ -207,36 +221,43 @@ class WishList(models.Model):
     products = models.ManyToManyField(Product,related_name='wishlists',blank=True)
 
     def __str__(self):
-        return self.customer.full_name
+        return self.customer.full_name or self.customer.email
 
 
 
 
 class Order(DirtyFieldsMixin,models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    customer = models.ForeignKey(User,on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
+    customer = models.ForeignKey(User,on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     # Biling details
-    full_name = models.CharField(max_length=200,null=True)
-    full_address = models.CharField(max_length=300,null=True)
-    order_notes = models.TextField(blank=True,null=True)
-    phone_number = models.CharField(max_length=25,null=True)
-    country = models.CharField(max_length=100,null=True)
+    full_name = models.CharField(max_length=200)
+    full_address = models.CharField(max_length=300)
+    order_notes = models.TextField(blank=True,null=True, default="")
+    phone_number = models.CharField(max_length=25)
+    guest_email = models.EmailField(blank=True, null=True)
+    device_id = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+    country = models.CharField(max_length=100, default="Egypt")
+    governorate = models.ForeignKey(Governorate, on_delete=models.SET_NULL, null=True, blank=True)
+    shipping_fee = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
 
     @property
     def total_price(self):
-        return sum(item.quantity * item.price for item in self.items.all())
+        items_total = sum(item.quantity * item.price for item in self.items.all())
+        return items_total + self.shipping_fee
     
     STATUS_CHOICES = [
     ("pending", "Pending"),
+    ("awaiting_payment", "Awaiting Online Payment"),
     ("paid", "Paid"),
     ("shipped", "Shipped"),
     ("delivered", "Delivered"),
     ("cancelled", "Cancelled"),
+    ("refunded", "Refunded"),
 ]
 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True)
  
     def __str__(self):
         return str(self.id)
@@ -251,7 +272,7 @@ class OrderItem(models.Model):
     variant = models.ForeignKey(ProductVariant,on_delete=models.SET_NULL, null=True)
     quantity = models.PositiveIntegerField(default=1)
     price = models.DecimalField(max_digits=8,decimal_places=2,blank=True)
-    created_at = models.DateTimeField(auto_now_add=True,null=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     @property
     def subtotal(self): # for each item not whole order
@@ -263,13 +284,18 @@ class OrderItem(models.Model):
         super().save(*args,**kwargs)
 
     def __str__(self):
-        return self.variant.product.name        
+        # Check if the relationship actually exists before accessing .product
+        if self.variant: # (Change 'variant' to whatever your ForeignKey is named)
+            return f"{self.variant.product.name} - {self.quantity}"
+        
+        # Fallback string if the original product was deleted
+        return f"Unknown/Deleted Product - {self.quantity}"     
 
     class Meta:
         ordering = ['-created_at']
 
 class Payment(models.Model):
-    customer = models.ForeignKey(User,on_delete=models.CASCADE,related_name='payments')
+    customer = models.ForeignKey(User,on_delete=models.CASCADE,related_name='payments', null=True, blank=True)
     order = models.OneToOneField(Order,on_delete=models.CASCADE,related_name='payment')
     amount = models.DecimalField(decimal_places=2,max_digits=10)
 
@@ -277,6 +303,7 @@ class Payment(models.Model):
         ("credit_card","Credit Card"),
         ("debit_card","Debit Card"),
         ("cash","Cash"),
+        ("cod","Cash on Delivery"),
         ("paypal","PayPal"),
         ("bank_transfer","Bank Transfer"),
         ("stripe","Stripe"),
@@ -289,7 +316,7 @@ class Payment(models.Model):
     transaction_id = models.CharField(max_length=100, null=True, unique=True)
 
     def __str__(self):
-        return self.customer.full_name if self.customer else "Guest Cart" 
+        return (self.customer.full_name or self.customer.email) if self.customer else "Guest Payment"
 
 
 
@@ -297,7 +324,7 @@ class Payment(models.Model):
 class Cart(models.Model):
     customer = models.ForeignKey(User,on_delete=models.CASCADE,null=True,blank=True)
 
-    device_id = models.CharField(max_length=255, null=True, blank=True)
+    device_id = models.CharField(max_length=255, null=True, blank=True, db_index=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -314,7 +341,9 @@ class Cart(models.Model):
         return sum(item.subtotal for item in self.items.all())
 
     def __str__(self):
-        return self.customer.full_name if self.customer else "Guest Cart"
+        if self.customer:
+            return self.customer.full_name or self.customer.email
+        return "Guest Cart"
 
 
 

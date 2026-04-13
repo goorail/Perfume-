@@ -32,9 +32,9 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
 CORS_ALLOW_ALL_ORIGINS = True
 ALLOWED_HOSTS = ['*']
+CORS_PREFLIGHT_MAX_AGE = 86400
 
 
 AUTH_USER_MODEL = 'base.User'
@@ -42,6 +42,7 @@ AUTH_USER_MODEL = 'base.User'
 # Application definition
 
 INSTALLED_APPS = [
+    'modeltranslation',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -68,6 +69,9 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
+    'base.middleware.ForceDashboardArabicMiddleware',
+    'base.middleware.APIAcceptLanguageMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -103,6 +107,7 @@ DATABASES = {
 'default': dj_database_url.config(
     engine='django.db.backends.postgresql',
     default=os.environ.get('DATABASE_URL'),
+    conn_max_age=60,
     )
 }
 
@@ -113,11 +118,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny', # Global default, strictly override in views
     ),
+    'DEFAULT_RENDERER_CLASSES': [
+        'base.api.renderers.CustomErrorJSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
 }
 
 SIMPLE_JWT = {
     # Token life span
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=50),  # Short life for security
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # Short life for security
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),  # Longer life for convenience
 
     # Other useful settings
@@ -159,7 +168,18 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
+from django.utils.translation import gettext_lazy as _
+
 LANGUAGE_CODE = 'en-us'
+
+LANGUAGES = (
+    ('en', _('English')),
+    ('ar', _('Arabic')),
+)
+
+LOCALE_PATHS = (
+    os.path.join(BASE_DIR, 'locale/'),
+)
 
 TIME_ZONE = 'UTC'
 
@@ -204,6 +224,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 ## Google Login Shit
 SITE_ID = 1
 
+
+## Telegram bot
+
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
+TELEGRAM_ADMIN_CHAT_ID = os.environ.get('TELEGRAM_ADMIN_CHAT_ID')
 
 
 ## EMAIL SHIT

@@ -1,19 +1,21 @@
 from django.urls import path
 from . import views
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 urlpatterns = [
     path('auth/me/',views.me),
 
     # Auth
     path('auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('auth/token/refresh/', views.CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('auth/signup/',views.register),
     path('auth/logout/',views.logout),
     path('auth/google/', views.google_login, name='google_login'),
 
     # # Product
     path('products/',views.get_all_products),
+    path('products/best-sellers/', views.get_best_sellers, name='best-sellers'),
+    path('products/top-selling-overall/', views.get_top_selling_product_overall, name='top-selling-overall'),
     path('products/<str:pk>/',views.get_product_detail),
     
     # # Cart
@@ -54,6 +56,12 @@ urlpatterns = [
     path('dashboard/order/<str:pk>/',views.order_detail_action),
     path('dashboard/make-admin/',views.promote_user_to_admin),
     path('dashboard/categories/', views.manage_categories, name='manage-categories'),
+    path('dashboard/categories/<int:pk>/', views.manage_category_detail, name='manage-category-detail'),
+
+    # Shipping / Governorates
+    path('shipping/governorates/', views.get_governorates, name='get-governorates'),
+    path('dashboard/governorates/', views.manage_governorates, name='manage-governorates'),
+    path('dashboard/governorates/<int:pk>/', views.manage_governorate_detail, name='manage-governorate-detail'),
 
     ###########
 
