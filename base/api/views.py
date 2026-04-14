@@ -463,6 +463,7 @@ def place_order(request):
             created_at__gte=timezone.now() - timedelta(seconds=10)
         ).exists()
     else:
+        # This is important
         # For guests, check by phone number + time window
         phone = request.data.get('phone_number', '')
         recent_order = models.Order.objects.filter(
