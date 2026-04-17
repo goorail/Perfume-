@@ -94,7 +94,7 @@ def me(request):
 
 ### products
 class ProductPagination(PageNumberPagination):
-    page_size = 10  # Default items per page
+    page_size = 12  # Default items per page
     page_size_query_param = 'page_size' # Frontend can override: /products/?page_size=50
     max_page_size = 100
 
