@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-05 00:27+0200\n"
+"POT-Creation-Date: 2026-04-18 20:08+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,365 +19,406 @@ msgstr ""
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
 
-#: .\base\api\serializers.py:228
+#: .\base\api\serializers.py:208 .\base\api\views.py:661
+msgid "You have already reviewed this product."
+msgstr "لقد قمت بالفعل بمراجعة هذا المنتج بالفعل"
+
+#: .\base\api\serializers.py:218
+msgid "You can only review products you have purchased and received."
+msgstr "يمكنك فقط تقييم المنتجات التي قمت بشرائها واستلامها."
+
+#: .\base\api\serializers.py:240
 msgid "Invalid status choice."
 msgstr "اختيار حالة غير صالح."
 
-#: .\base\api\serializers.py:232
+#: .\base\api\serializers.py:244
 msgid "You cannot manually mark an order as Paid."
 msgstr "لا يمكنك تحديد الطلب كمدفوع يدوياً."
 
-#: .\base\api\serializers.py:292
+#: .\base\api\serializers.py:250
+msgid "You can only refund orders that are Paid, Shipped, or Delivered."
+msgstr "يمكنك فقط استرجاع الطلبات التي تم دفعها، شحنها، أو توصيلها."
+
+#: .\base\api\serializers.py:310
 msgid "Duplicate volumes are not allowed in the same request."
 msgstr "لا يُسمح بتكرار الأحجام في نفس الطلب."
 
-#: .\base\api\serializers.py:312 .\base\api\serializers.py:404
+#: .\base\api\serializers.py:330 .\base\api\serializers.py:422
 msgid "A variant with this volume already exists for this product."
 msgstr "يوجد بالفعل متغير بهذا الحجم لهذا المنتج."
 
-#: .\base\api\views.py:44
+#: .\base\api\serializers.py:498
+msgid "User matching this token does not exist."
+msgstr "المستخدم المطابق لهذا الرمز غير موجود."
+
+#: .\base\api\views.py:50
 msgid "passwords doesn't match"
 msgstr "كلمتا المرور غير متطابقتين"
 
-#: .\base\api\views.py:48
+#: .\base\api\views.py:54
 msgid "Registeration failed,Try again"
 msgstr "فشل التسجيل، حاول مرة أخرى"
 
-#: .\base\api\views.py:58
+#: .\base\api\views.py:64
 msgid "user created"
 msgstr "تم إنشاء المستخدم"
 
-#: .\base\api\views.py:61
+#: .\base\api\views.py:67
 msgid "error occurred try again"
 msgstr "حدث خطأ، حاول مرة أخرى"
 
-#: .\base\api\views.py:68
+#: .\base\api\views.py:74
 msgid "Refresh token required"
 msgstr "حدث خطأ في الريفريش توكين"
 
-#: .\base\api\views.py:73
+#: .\base\api\views.py:79
 msgid "Logout successful"
 msgstr "تم تسجيل الخروج بنجاح"
 
-#: .\base\api\views.py:75
+#: .\base\api\views.py:81
 msgid "Invalid token"
 msgstr "التوكن غير صحيح"
 
-#: .\base\api\views.py:150
+#: .\base\api\views.py:156
 msgid "Invalid price format. Must be a number."
 msgstr "صيغة السعر غير صحيحة. يجب أن يكون رقمًا."
 
-#: .\base\api\views.py:197
+#: .\base\api\views.py:203
 msgid "Product not found"
 msgstr "المنتج غير موجود"
 
-#: .\base\api\views.py:268 .\base\api\views.py:1495 .\base\api\views.py:1607
+#: .\base\api\views.py:249
+msgid "No products found"
+msgstr "لا توجد منتجات"
+
+#: .\base\api\views.py:269
+msgid "No Device ID provided for guest cart."
+msgstr "لم يتم توفير معرف الجهاز للسلة غير المسجلة."
+
+#: .\base\api\views.py:301 .\base\api\views.py:1625 .\base\api\views.py:1737
 msgid "Product variant not found."
 msgstr "نسخة المنتج غير موجودة."
 
-#: .\base\api\views.py:284
+#: .\base\api\views.py:317
 msgid "No enough stock for this item."
 msgstr "لا يوجد مخزون كافي لهذا العنصر"
 
-#: .\base\api\views.py:315 .\base\api\views.py:342
+#: .\base\api\views.py:349 .\base\api\views.py:377
 msgid "Cart item not found."
 msgstr "عنصر السلة غير موجود."
 
-#: .\base\api\views.py:320
+#: .\base\api\views.py:354
 msgid "Item removed"
 msgstr "تم إزالة العنصر"
 
-#: .\base\api\views.py:323
+#: .\base\api\views.py:357
 msgid "Exceeds available stock"
 msgstr "تجاوز الكمية المتاحة"
 
-#: .\base\api\views.py:357
+#: .\base\api\views.py:393
 msgid "All items removed from cart"
 msgstr "تم إزالة جميع العناصر من السلة"
 
-#: .\base\api\views.py:366
-msgid "No guest cart to merge"
-msgstr "لا يوجد سلة ضيف لدمجها"
+#: .\base\api\views.py:416
+msgid "Orders merged. No guest cart to merge."
+msgstr "تم دمج الطلبات. لا توجد سلة ضيف لدمجها."
 
-#: .\base\api\views.py:370
+#: .\base\api\views.py:420
 msgid "Guest cart not found or already merged"
 msgstr "سلة الضيف غير موجودة أو تم دمجها بالفعل"
 
-#: .\base\api\views.py:394
+#: .\base\api\views.py:444
 msgid "Carts merged successfully!"
 msgstr "تم دمج السلات بنجاح!"
 
-#: .\base\api\views.py:410
+#: .\base\api\views.py:465
+msgid "Device ID is required for guest checkout."
+msgstr "معرف الجهاز مطلوب لاتمام طلب الضيف."
+
+#: .\base\api\views.py:468
 msgid "Cart not found."
 msgstr "السلة غير موجودة."
 
-#: .\base\api\views.py:412
+#: .\base\api\views.py:471
 msgid "Cart is empty"
 msgstr "السلة فارغة"
 
-#: .\base\api\views.py:422
+#: .\base\api\views.py:491
 msgid "Please wait a moment before placing another order."
 msgstr "يرجى الانتظار لحظات (10 ثواني) قبل تقديم طلب آخر."
 
-#: .\base\api\views.py:437
+#: .\base\api\views.py:507
 #, python-brace-format
 msgid "Sorry, {product_name} ({volume}) is no longer available."
 msgstr "عذراً، {product_name} ({volume}) لم يعد متاحاً."
 
-#: .\base\api\views.py:444
+#: .\base\api\views.py:514
 #, python-brace-format
 msgid "Product {product_name} is out of stock. Only {stock} left."
 msgstr "المنتج {product_name} نفد من المخزون. متبقي {stock} فقط."
 
-#: .\base\api\views.py:457
+#: .\base\api\views.py:527
 msgid "Selected governorate is not available for shipping."
 msgstr "المحافظة المحددة غير متاحة للشحن."
 
-#: .\base\api\views.py:519
+#: .\base\api\views.py:594
 msgid "Order placed successfully"
 msgstr "تم تسجيل الاوردر بنجاح"
 
-#: .\base\api\views.py:530
+#: .\base\api\views.py:605
 msgid "Order initiated"
 msgstr "تم تأكيد الطلب."
 
-#: .\base\api\views.py:575
-msgid "You have already reviewed this product."
-msgstr "لقد قمت بالفعل بمراجعة هذا المنتج بالفعل"
+#: .\base\api\views.py:629
+msgid "Device ID is required to fetch guest orders."
+msgstr "معرف الجهاز مطلوب لجلب طلبات الضيف."
 
-#: .\base\api\views.py:629 .\base\api\views.py:1460 .\base\api\views.py:1561
+#: .\base\api\views.py:716 .\base\api\views.py:1590 .\base\api\views.py:1691
 msgid "Product not found."
 msgstr "المنتج غير موجود."
 
-#: .\base\api\views.py:637
+#: .\base\api\views.py:724
 msgid "Removed from wishlist"
 msgstr "تم الازالة من المفضلة"
 
-#: .\base\api\views.py:640
+#: .\base\api\views.py:727
 msgid "Added to wishlist"
 msgstr "تم الاضافة للمفضلة"
 
-#: .\base\api\views.py:668
+#: .\base\api\views.py:779
 msgid "Order ID is required"
 msgstr "الاوردر اي دي مطلوب"
 
-#: .\base\api\views.py:674 .\base\api\views.py:827 .\base\api\views.py:965
+#: .\base\api\views.py:785 .\base\api\views.py:937 .\base\api\views.py:1074
 msgid "Order not found"
 msgstr "الاوردر غير موجود"
 
-#: .\base\api\views.py:678 .\base\api\views.py:832 .\base\api\views.py:969
+#: .\base\api\views.py:789 .\base\api\views.py:942 .\base\api\views.py:1078
 msgid "This order cannot be paid online or is already processed."
 msgstr "لا يمكن دفع هذا الطلب عبر الإنترنت أو تمت معالجته بالفعل."
 
-#: .\base\api\views.py:758
+#: .\base\api\views.py:869
 msgid "Could not link PayPal transaction to Order"
 msgstr "فشل ربط عملية الدفع بالاوردر"
 
-#: .\base\api\views.py:767 .\base\api\views.py:912
+#: .\base\api\views.py:878 .\base\api\views.py:1021
 msgid "Order already processed"
 msgstr "الاوردر تم معالجته بالفعل"
 
-#: .\base\api\views.py:795
+#: .\base\api\views.py:889
+#, python-brace-format
+msgid "Insufficient stock for {variant}"
+msgstr "نفذ المخزون من {variant}"
+
+#: .\base\api\views.py:906
 msgid "Order completed!"
 msgstr "تم الانتهاء من الاوردر بنجاح"
 
-#: .\base\api\views.py:798
+#: .\base\api\views.py:909
 msgid "Order ID not found in database"
 msgstr "الاوردر اي دي غير موجود في الداتا بيز"
 
-#: .\base\api\views.py:803
+#: .\base\api\views.py:914
 msgid "Payment not completed"
 msgstr "الدفع لم يكتمل"
 
-#: .\base\api\views.py:822 .\base\api\views.py:960
+#: .\base\api\views.py:932 .\base\api\views.py:1069
 msgid "order_id is required"
 msgstr "الاوردر اي دي مطلوب"
 
-#: .\base\api\views.py:979
+#: .\base\api\views.py:1088
 msgid "Failed to authenticate with Paymob"
 msgstr "فشل المصادقة مع بايبموب"
 
-#: .\base\api\views.py:1019
+#: .\base\api\views.py:1128
 msgid "Failed to register order with Paymob"
 msgstr "فشل تسجيل الاوردر في بايبموب"
 
-#: .\base\api\views.py:1042
+#: .\base\api\views.py:1154
 msgid "Wallet integration is not configured"
 msgstr "مشكله مع بايموب"
 
-#: .\base\api\views.py:1059
+#: .\base\api\views.py:1171
 msgid "Failed to get payment key from Paymob"
 msgstr "فشل الحصول على مفتاح الدفع من بايبموب"
 
-#: .\base\api\views.py:1066
+#: .\base\api\views.py:1178
 msgid "Wallet number is required"
 msgstr "الواليت اي دي مطلوب"
 
-#: .\base\api\views.py:1080
+#: .\base\api\views.py:1192
 msgid "Failed to initialize wallet payment"
 msgstr "فشل الحصول على مفتاح الدفع من بايبموب"
 
-#: .\base\api\views.py:1100
+#: .\base\api\views.py:1212
 msgid "HMAC signature missing"
 msgstr "فشل الحصول على مفتاح التأكيد hmac من بايبموب"
 
-#: .\base\api\views.py:1150
+#: .\base\api\views.py:1262
 msgid "Invalid HMAC signature"
 msgstr "HMAC خاطئ"
 
-#: .\base\api\views.py:1199
+#: .\base\api\views.py:1311
 msgid "Webhook received successfully"
 msgstr "تم استلام الويب هوك بنجاح"
 
-#: .\base\api\views.py:1224 .\base\api\views.py:1948
+#: .\base\api\views.py:1336 .\base\api\views.py:2089
 msgid "You can't perform this action"
 msgstr "لا يمكن تنفيذ هذا الاجراء"
 
-#: .\base\api\views.py:1240
+#: .\base\api\views.py:1352
 msgid "Category not found."
 msgstr "الفئة غير موجودة."
 
-#: .\base\api\views.py:1246
+#: .\base\api\views.py:1358
 msgid "Category updated"
 msgstr "تم تحديث الفئة"
 
-#: .\base\api\views.py:1256
-msgid "Cannot delete this category because it is assigned to products. Please deactivate it instead."
+#: .\base\api\views.py:1368
+msgid "Cannot delete this category because it is assigned to products. Please "
+"deactivate it instead."
 msgstr "لا يمكن حذف هذه الفئة لأنها مرتبطة بمنتجات. يرجى إلغاء تنشيطها بدلاً من ذلك."
 
 
-#: .\base\api\views.py:1260
+#: .\base\api\views.py:1372
 msgid "Category permanently deleted."
 msgstr "تم حذف الفئة بشكل دائم."
 
-#: .\base\api\views.py:1265
+#: .\base\api\views.py:1377
 msgid "Category deactivated successfully."
 msgstr "تم إلغاء تنشيط الفئة بنجاح."
 
-#: .\base\api\views.py:1278
+#: .\base\api\views.py:1390
 msgid "Only Superusers can promote other users to Admin."
 msgstr "الادمن الاكبر فقط يمكنه ترقية المستخدمين الآخرين إلى أدمن."
 
-#: .\base\api\views.py:1286
+#: .\base\api\views.py:1398
 msgid "User with this email not found."
 msgstr "لا يوجد مستخدم بهذا البريد الإلكتروني."
 
-#: .\base\api\views.py:1292
+#: .\base\api\views.py:1404
 msgid "User is already an admin (Staff)"
 msgstr "المستخدم ادمن بالفعل"
 
-#: .\base\api\views.py:1294
+#: .\base\api\views.py:1406
 #, python-brace-format
 msgid "{user_name} is now an Admin (Staff)."
 msgstr "{user_name} الآن أصبح مسؤولاً (أدمن)."
 
-#: .\base\api\views.py:1413
+#: .\base\api\views.py:1530
 msgid "Order not found."
 msgstr "الطلب غير موجود."
 
-#: .\base\api\views.py:1423
+#: .\base\api\views.py:1553
 msgid "Status updated"
 msgstr "تم تحديث الحالة"
 
-#: .\base\api\views.py:1443
+#: .\base\api\views.py:1573
 msgid "Product created successfully"
 msgstr "تم انشاء المنتج بنجاح"
 
-#: .\base\api\views.py:1499
+#: .\base\api\views.py:1629
 msgid "No image file provided (key 'img' missing)."
 msgstr "لم يتم توفير ملف صورة (مفتاح 'img' مفقود)."
 
-#: .\base\api\views.py:1516
+#: .\base\api\views.py:1646
 msgid "Image uploaded"
 msgstr "تم رفع الصورة"
 
-#: .\base\api\views.py:1534 .\base\api\views.py:1547
+#: .\base\api\views.py:1664 .\base\api\views.py:1677
 msgid "Product image not found."
 msgstr "صورة المنتج غير موجودة."
 
-#: .\base\api\views.py:1536
+#: .\base\api\views.py:1666
 msgid "Image deleted successfully."
 msgstr "تم حذف الصورة بنجاح"
 
-#: .\base\api\views.py:1550
+#: .\base\api\views.py:1680
 msgid "Thumbnail set successfully."
 msgstr "تم تعيين الصورة المصغرة بنجاح"
 
-#: .\base\api\views.py:1574
-msgid "Cannot hard delete this product because one or more of its variants exist in customer orders. Please deactivate it instead."
-msgstr "لا يمكن حذف هذا المنتج بشكل دائم لأن واحدًا أو أكثر من عناصره موجود في طلبات العملاء. يرجى إلغاء تنشيطه بدلاً من ذلك."
+#: .\base\api\views.py:1704
+msgid "Cannot hard delete this product because one or more of its variants exist in "
+"customer orders. Please deactivate it instead."
+msgstr "لا يمكن حذف هذا المنتج بشكل دائم لأن واحدًا أو أكثر من عناصره موجود في طلبات "
+"العملاء. يرجى إلغاء تنشيطه بدلاً من ذلك."
 
-#: .\base\api\views.py:1579
+
+#: .\base\api\views.py:1709
 msgid "Product permanently deleted."
 msgstr "تم حذف المنتج بشكل دائم"
 
-#: .\base\api\views.py:1585
+#: .\base\api\views.py:1715
 msgid "Product deactivated successfully."
 msgstr "تم إلغاء تنشيط المنتج بنجاح."
 
-#: .\base\api\views.py:1596
+#: .\base\api\views.py:1726
 msgid "Product updated"
 msgstr "تم تحديث المنتج"
 
-#: .\base\api\views.py:1619
-msgid "Cannot hard delete this variant because it exists in customer orders. Please deactivate it instead."
-msgstr "لا يمكن حذف هذا العنصر بشكل دائم لأن واحدًا أو أكثر من عناصره موجود في طلبات العملاء. يرجى إلغاء تنشيطه بدلاً من ذلك."
+#: .\base\api\views.py:1749
+msgid "Cannot hard delete this variant because it exists in customer orders. Please "
+"deactivate it instead."
+msgstr "لا يمكن حذف هذا العنصر بشكل دائم لأن واحدًا أو أكثر من عناصره موجود في طلبات "
+"العملاء. يرجى إلغاء تنشيطه بدلاً من ذلك."
 
 
-#: .\base\api\views.py:1625
+#: .\base\api\views.py:1755
 msgid "Variant permanently deleted."
 msgstr "تم حذف العنصر بشكل دائم"
 
-#: .\base\api\views.py:1631
+#: .\base\api\views.py:1761
 msgid "Variant deactivated successfully."
 msgstr "تم إلغاء تنشيط العنصر بنجاح."
 
-#: .\base\api\views.py:1642
+#: .\base\api\views.py:1772
 msgid "Variant updated"
 msgstr "تم تحديث العنصر"
 
-#: .\base\api\views.py:1803
+#: .\base\api\views.py:1933
 msgid "No token provided"
 msgstr "لم يتم توفير توكن"
 
-#: .\base\api\views.py:1842
+#: .\base\api\views.py:1982
 msgid "Invalid Google token"
 msgstr "توكن جوجل غير صحيح"
 
-#: .\base\api\views.py:1877
+#: .\base\api\views.py:2017
 msgid "Banner not found."
 msgstr "البانر غير موجود."
 
-#: .\base\api\views.py:1892
+#: .\base\api\views.py:2032
 msgid "Banner deleted successfully."
 msgstr "تم حذف البانر بنجاح"
 
-#: .\base\api\views.py:1963
+#: .\base\api\views.py:2104
 msgid "Governorate not found."
 msgstr "المحافظة غير موجودة."
 
-#: .\base\api\views.py:1969
+#: .\base\api\views.py:2110
 msgid "Governorate updated"
 msgstr "تم تحديث المحافظة."
 
-#: .\base\api\views.py:1978
-msgid "Cannot delete this governorate because it is referenced by existing orders. Please deactivate it instead."
-msgstr "لا يمكن حذف هذه المحافظة لأنها مرتبطة بطلبات حالية. يرجى إلغاء تنشيطها بدلاً من ذلك."
+#: .\base\api\views.py:2119
+msgid "Cannot delete this governorate because it is referenced by existing orders. "
+"Please deactivate it instead."
+msgstr "لا يمكن حذف هذه المحافظة لأنها مرتبطة بطلبات حالية. يرجى إلغاء تنشيطها بدلاً "
+"من ذلك."
 
 
-#: .\base\api\views.py:1982
+#: .\base\api\views.py:2123
 msgid "Governorate permanently deleted."
 msgstr "تم حذف المحافظة بشكل دائم."
 
-#: .\base\api\views.py:1986
+#: .\base\api\views.py:2127
 msgid "Governorate deactivated successfully."
 msgstr "تم إلغاء تنشيط المحافظة بنجاح."
 
-#: .\store\settings.py:175
+#: .\store\settings.py:176
 msgid "English"
 msgstr "انجليزي"
 
-#: .\store\settings.py:176
+#: .\store\settings.py:177
 msgid "Arabic"
 msgstr "عربي"
 
@@ -395,12 +436,6 @@ msgstr "المنتج غير موجود"
 
 msgid "No CartItem matches the given query."
 msgstr "العنصر غير موجود في السلة"
-
-msgid "No Device ID provided for guest cart."
-msgstr "لم يتم توفير معرف الجهاز للسلة غير المسجلة."
-
-msgid "Insufficient stock for {variant}"
-msgstr "نفذ المخزون من {variant}"
 
 msgid "Given token not valid for any token type"
 msgstr "التوكن المقدم غير صالح لأي نوع توكن"
