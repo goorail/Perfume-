@@ -398,8 +398,22 @@ def clear_cart(request):
 def merge_cart(request):
     device_id = request.data.get('device_id')
     
+    # 1. Merge Orders & Payments by Device ID
+    if device_id:
+        guest_orders_by_device = models.Order.objects.filter(device_id=device_id, customer__isnull=True)
+        if guest_orders_by_device.exists():
+            models.Payment.objects.filter(order__in=guest_orders_by_device).update(customer=request.user)
+            guest_orders_by_device.update(customer=request.user)
+            
+    # 2. Merge Orders & Payments by User Email
+    if request.user.email:
+        guest_orders_by_email = models.Order.objects.filter(guest_email__iexact=request.user.email, customer__isnull=True).exclude(guest_email="")
+        if guest_orders_by_email.exists():
+            models.Payment.objects.filter(order__in=guest_orders_by_email).update(customer=request.user)
+            guest_orders_by_email.update(customer=request.user)
+
     if not device_id:
-        return Response({"message": _("No guest cart to merge")}, status=200)
+        return Response({"message": _("Orders merged. No guest cart to merge.")}, status=200)
 
     guest_cart = models.Cart.objects.filter(device_id=device_id, customer__isnull=True).first()
     if not guest_cart:
